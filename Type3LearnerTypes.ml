@@ -1,4 +1,3 @@
-
 (* M: *)
 (*
 type morph = A | Lot | Of | Possible | Morphs
@@ -6,23 +5,24 @@ type morph = A | Lot | Of | Possible | Morphs
 type morph = string
 
 (* These data types are enumerations of possible feature values: *)
-type tense = Past | Nonpast                     (* F_tense *)
-type person = First | Second | Third            (* F_person *)
-type quantity = Singular | Plural | Mass        (* F_quantity *)
-type gender = Animate | Inanimate               (* F_gender *)
-                                                (* F_telic is bool *)
+type 'a polarity = Minus | Plus of 'a
+type augmented = Augmented of unit polarity
+type minimal = Minimal of augmented polarity
+
 (* The set F: *)
 type feature =
-        | Tense of tense
-        | Person of person 
-        | Quantity of quantity
-        | Gender of gender
-        | Telic of bool
+        | Participant
+        | Speaker of unit polarity
+        | Group of minimal polarity
 
-(* Unfortunately, we type each feature's name three different times.  I'd like
- * a better way to define a feature and its allowed values in one go. *)
+let hi = Participant
 
-type monomial = feature list
+module FSet = Set.Make (struct
+        type t = feature
+        let compare = compare
+end)
+
+type monomial = FSet
 (* We'll maybe use "feature list" or "feature set" of "feature hashtable". *)
 
 (* A monomial is maximal iff it contains one feature for each feature
