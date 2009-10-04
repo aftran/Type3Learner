@@ -1,38 +1,39 @@
 (* M: *)
-(*
-type morph = A | Lot | Of | Possible | Morphs
- *)
 type morph = string
 
-(* These data types are enumerations of possible feature values: *)
-type 'a polarity = Minus | Plus of 'a
-type augmented = Augmented of unit polarity
-type minimal = Minimal of augmented polarity
-
-(* The set F: *)
-type feature =
-        | Participant
-        | Speaker of unit polarity
-        | Group of minimal polarity
-
-let hi = Participant
+type feature = string*string
+(* Features are commonly written as "+group" or "-augmented".  I will represent
+ * these as ("group", "+") or ("augmented", "-").
+ * I don't have to represent the hierarchy of feature implications (for example,
+ * feature -group might imply -augmented), because I can assume the input text
+ * obeys it.  The Type3Learner algorithm currently does not take any knowledge
+ * of the feature hierarchy into account.
+ * As a consequence, I can represent monomials as unstructed sets of features. *)
 
 module FSet = Set.Make (struct
         type t = feature
         let compare = compare
 end)
 
-type monomial = FSet
-(* We'll maybe use "feature list" or "feature set" of "feature hashtable". *)
+type monomial = FSet.t
 
-(* A monomial is maximal iff it contains one feature for each feature
- * constructor.  (Easy function to write.)  *)
+type lexeme = morph * monomial
 
-type lexicon = (morph * monomial) list
-(* It'd be nice if I could encode a specific type for "maximal monomial" to
- * enforce that a lexicon's elements can only have maximal monomials.
- *
- * And again, we might want the lexicon to be a (morph * monomial) set or a
- * (morph * monomial, bool) hashtable. *)
+module LSet = Set.Make(struct
+        type t = lexeme*int
+        let compare = compare
+end)
 
-(* I haven't done Lex, BR and T yet. *)
+type lexicon = LSet.t
+
+type blocker = (morph*int) * (morph*int)
+(* Might restructure the lexicon as a map so we can do something like
+*       type blocker = lexKey * lexKey                          *)
+
+module Table = Map.Make(struct
+        type t = monomial
+        let compare = compare
+end)
+
+type table = (morph*int*int list) Table.t
+(* This is a map from (maximal) monomials to monomials. *)
