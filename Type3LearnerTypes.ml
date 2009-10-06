@@ -17,23 +17,14 @@ end)
 
 type monomial = FSet.t
 
-type lexeme = morph * monomial
-
-module LSet = Set.Make(struct
-        type t = lexeme*int
-        let compare = compare
-end)
-
-type lexicon = LSet.t
+type lexicon = ((morph*int),  monomial) Hashtbl.t
 
 type blocker = (morph*int) * (morph*int)
 (* Might restructure the lexicon as a map so we can do something like
 *       type blocker = lexKey * lexKey                          *)
 
-module Table = Map.Make(struct
-        type t = monomial
-        let compare = compare
-end)
+type seenness = Seen | Predicted
 
-type table = (morph*int*int list) Table.t
-(* This is a map from (maximal) monomials to monomials. *)
+type table = (monomial, (morph*int*seenness list)) Hashtbl.t
+(* This is a map from (maximal) monomials to lists of lexicon keys
+ * (=monomial*int) associated with a seenness value. *)
