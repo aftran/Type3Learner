@@ -20,7 +20,7 @@ type monomial = FSet.t
 (* A lexicon is a table that maps morphs to tables that map integers to
  * monomials.  In other words, it lets each morph have multiple meanings
  * (=monomials), which are indexed by integers. *)
-type lexicon = (morph, (int, monomial) Hashtbl.t) Hashtbl.t
+type lexicon = (morph, monomial list) Hashtbl.t
 
 type blocker = (morph*int) * (morph*int)
 (* Might restructure the lexicon as a map so we can do something like
@@ -31,3 +31,19 @@ type seenness = Seen | Predicted
 type table = (monomial, (morph*int*seenness list)) Hashtbl.t
 (* This is a map from (maximal) monomials to lists of lexicon keys
  * (=monomial*int) associated with a seenness value. *)
+
+(* Impure function with the same signature as Hashtbl.add.
+ * Adds (monomial, i) ~> meaning to the Hashtbl l and then minimizes l. *)
+let update l (monomial, i) meaning =
+        let minimize l (monomial, i) meaning = 
+                () 
+        in
+        Hashtbl.remove l (monomial, i);
+        Hashtbl.add l (monomial, i) meaning;
+        minimize l (monomial, i) meaning
+
+(* For a monomial list ms and environment (=maximal monomial) e, output an
+ * element of ms that is the most similar to e. *)
+let maxSimilarity ms e = List.hd ms (*STUB! TODO*) 
+
+let similarity s t = FSet.cardinal (FSet.inter s t)
