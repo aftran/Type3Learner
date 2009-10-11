@@ -32,18 +32,32 @@ type table = (monomial, (morph*int*seenness list)) Hashtbl.t
 (* This is a map from (maximal) monomials to lists of lexicon keys
  * (=monomial*int) associated with a seenness value. *)
 
+(* "Minimize" a list of monomials -- combine two by intersection if they differ
+ * by only one feature, and repeat until there is no change.  The repetition
+ * means this function is idempotent. *)
+let minimize ms = ms (* STUB TODO! *)
+
 (* Impure function with the same signature as Hashtbl.add.
- * Adds (monomial, i) ~> meaning to the Hashtbl l and then minimizes l. *)
-let update l (monomial, i) meaning =
-        let minimize l (monomial, i) meaning = 
-                () 
-        in
-        Hashtbl.remove l (monomial, i);
-        Hashtbl.add l (monomial, i) meaning;
-        minimize l (monomial, i) meaning
+ * Adds (monomial, i) ~> meaning to the Hashtbl l and then minimizes the altered
+ * part of l. *)
+let update l morph mean =
+        if Hashtbl.mem l morph then
+                let means = Hashtbl.find l morph in
+                Hashtbl.replace l morph (minimize mean :: means)
+        else
+                Hashtbl.add l morph [mean]
+                (* no need to minimize if the lexicon was already minimized *)
 
-(* For a monomial list ms and environment (=maximal monomial) e, output an
- * element of ms that is the most similar to e. *)
-let maxSimilarity ms e = List.hd ms (*STUB! TODO*) 
-
+(* The similarity of two monomials = the size of their intesection. *)
 let similarity s t = FSet.cardinal (FSet.inter s t)
+
+(* Compare function for sorting monomials by dissimilarity to e. *)
+let compareDissimTo e s t = compare (similarity e s) (similarity e t)
+ 
+(* For a monomial list ms and environment (=maximal monomial) e, output an
+ * element of ms that is the most similar to e. 
+ *
+ * This is a wasteful implementation, because I'm sorting the whole list before
+ * using only the first element.  But these lists will be short, and we're not
+ * worried about minute performance gains. *)
+let maxSimilarity ms e = List.hd (List.sort (compareDissimTo e) ms)
