@@ -70,7 +70,7 @@ let update l morph mean =
 let similarity s t = FSet.cardinal (FSet.inter s t)
 
 (* Compare function for sorting monomials by dissimilarity to e. *)
-let compareDissimTo e s t = compare (similarity e s) (similarity e t)
+let compareDissimTo e s t = compare (similarity e t) (similarity e s)
  
 (* For a monomial list ms and environment (=maximal monomial) e, output an
  * element of ms that is the most similar to e. 
