@@ -40,10 +40,14 @@ let delta a b = let u = FSet.union a b in
 let similar a b = let d = delta a b in
                   1 == FSet.cardinal d
 
-(* The "minimized" version of h::hs, a list of monomials.  Minimizing means
- * combine any pair of monomials that differs by only one element.
- * Non-idempotent. *) 
-let rec minimizeBy h hs = match hs with
+(* The "minimized" version of h::hs, which is a list of monomials.  Minimizing
+ * means combining (by intersection) any pair of monomials that differs by only
+ * one element.  Non-idempotent.
+ * TODO: This isn't quite right yet.  We need to make the list completely
+ * minimized so that no two morphs are "similar" (as defined in the function
+ * above).  One way to do this is by repeating the minimize process until we
+ * reach a fixed point. *)
+let rec minimize h hs = match hs with
         | [] -> h::hs
         | m::ms -> if similar h m then 
                 let n = FSet.inter h m in
@@ -51,22 +55,13 @@ let rec minimizeBy h hs = match hs with
         else
                 m::minimizeBy h ms
 
-(* "Minimize" a list of monomials -- combine two by intersection if they differ
- * by only one feature, and repeat until there is no change.  The repetition
- * means this function is idempotent.
- * TODO: This actually isn't idempotent yet, because it only performs minimizeBy
- * once!  We need to repeat minimizeBy until we reach a fixed point.  *)
-let minimize ms = match ms with
-        | [] -> []
-        | h::hs -> minimizeBy h hs
-
-(* Impure function with the same signature as Hashtbl.add.
- * Adds (monomial, i) ~> meaning to the Hashtbl l and then minimizes the altered
- * part of l. *)
+(* Impure (imperative) function with the same signature as Hashtbl.add.
+ * Adds mean (a monomial) to the list of homonyms associated with the morpheme
+ * moph in lexicon l. *)
 let update l morph mean =
         if Hashtbl.mem l morph then
                 let means = Hashtbl.find l morph in
-                Hashtbl.replace l morph (minimize mean :: means)
+                Hashtbl.replace l morph (minimize mean means)
         else
                 Hashtbl.add l morph [mean]
                 (* no need to minimize if the lexicon was already minimized *)
