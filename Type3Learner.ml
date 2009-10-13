@@ -51,9 +51,9 @@ let rec minimize h hs = match hs with
         | [] -> h::hs
         | m::ms -> if similar h m then 
                 let n = FSet.inter h m in
-                minimizeBy n ms
+                minimize n ms
         else
-                m::minimizeBy h ms
+                m::minimize h ms
 
 (* Impure (imperative) function with the same signature as Hashtbl.add.
  * Adds mean (a monomial) to the list of homonyms associated with the morpheme
