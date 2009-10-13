@@ -32,10 +32,33 @@ type table = (monomial, (morph*int*seenness list)) Hashtbl.t
 (* This is a map from (maximal) monomials to lists of lexicon keys
  * (=monomial*int) associated with a seenness value. *)
 
+(* Symmetric difference of two sets. *)
+let delta a b = let u = FSet.union a b in
+                let i = FSet.inter a b in
+                FSet.diff u i
+
+let similar a b = let d = delta a b in
+                  1 == FSet.cardinal d
+
+(* The "minimized" version of h::hs, a list of monomials.  Minimizing means
+ * combine any pair of monomials that differs by only one element.
+ * Non-idempotent. *) 
+let rec minimizeBy h hs = match hs with
+        | [] -> h::hs
+        | m::ms -> if similar h m then 
+                let n = FSet.inter h m in
+                minimizeBy n ms
+        else
+                m::minimizeBy h ms
+
 (* "Minimize" a list of monomials -- combine two by intersection if they differ
  * by only one feature, and repeat until there is no change.  The repetition
- * means this function is idempotent. *)
-let minimize ms = ms (* STUB TODO! *)
+ * means this function is idempotent.
+ * TODO: This actually isn't idempotent yet, because it only performs minimizeBy
+ * once!  We need to repeat minimizeBy until we reach a fixed point.  *)
+let minimize ms = match ms with
+        | [] -> []
+        | h::hs -> minimizeBy h hs
 
 (* Impure function with the same signature as Hashtbl.add.
  * Adds (monomial, i) ~> meaning to the Hashtbl l and then minimizes the altered
