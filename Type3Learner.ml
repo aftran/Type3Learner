@@ -79,3 +79,11 @@ let compareDissimTo e s t = compare (similarity e t) (similarity e s)
  * using only the first element.  But these lists will be short, and we're not
  * worried about minute performance gains. *)
 let maxSimilarity ms e = List.hd (List.sort (compareDissimTo e) ms)
+
+(* This function selects out of lx the entry for m that is the most simlar to
+ * the monomial m (the 'environment').  It then returns that entry intersected
+ * with e; and a list of  *)
+let intersect m ms =
+        match ms with
+        [] -> (m,[])
+        | h::hs -> ((FSet.inter h m), hs)

@@ -1,0 +1,8 @@
+Sunday 18 Oct 2009
+in 1557 Thinking about minimize from the lattice POV, investigating a poset library.  Noticed our pairwise-comparison method only finds local minimums.
+out 1848 2h51m
+
+Wednesday 19 Oct 2009
+in 1800 Thinking about KP's non-gradient algorithm for minimize.  (Is it actually non-gradient?)
+1838 Writing intersect, synchronize. 
+out 1942 1h42m; week so far: 3h93m=4h33m
