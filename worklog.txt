@@ -1,8 +1,25 @@
+Frodau 16 Oct 2009
+in 1100 meeting with KP.
+out 1200 1h
+
 Sunday 18 Oct 2009
 in 1557 Thinking about minimize from the lattice POV, investigating a poset library.  Noticed our pairwise-comparison method only finds local minimums.
 out 1848 2h51m
 
-Wednesday 19 Oct 2009
+Wednesday 21 Oct 2009
 in 1800 Thinking about KP's non-gradient algorithm for minimize.  (Is it actually non-gradient?)
 1838 Writing intersect, synchronize. 
-out 1942 1h42m; week so far: 3h93m=4h33m
+out 1942 1h42m; week so far: 4h93m=5h33m
+
+Th 22 Oct 2009
+in 1530 Synchronize.
+1702 Thinking about the rough complexity notes KP sent.
+out 1737 2h7m; week so far: 6h40m
+in 1812 Thinking about all the pieces of the algorithm.  (Like, seeing if we can get away with homonyms without explicit indexes...   since we do change the indexes when we do minimize.)
+out 1920 1h8m; so far 8h48m
+in 1941
+out 2007 26m; so far 9h14m
+in 2202 writing comments on KP's complexity-analysis notes.
+out 2242 40m
+
+Week: 9h54m
