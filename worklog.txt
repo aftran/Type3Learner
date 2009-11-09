@@ -23,3 +23,22 @@ in 2202 writing comments on KP's complexity-analysis notes.
 out 2242 40m
 
 Week: 9h54m
+
+Friday 23 Oct 2009
+in 1100 meeting with KP: talking about analysis, worked out why T1<<T2<<T3 in complexity.  Figured out how many steps it takes to compute transitive closure.
+out 1320 2h20m
+
+Sunday 25 Oct 2009
+in 1750 thinking about why simple ways to avoid calculating transitive closure don't stop us from requiring more steps than Type 1 (which has no blocking rules).
+out 1847 57m; so far 3h17m
+
+Friday 31 Oct 2009
+~1h meeting (really it was longer, but we talked about me as well, so I won't charge for more than an hour).
+
+Thursday 5 Nov 2009
+in 1756 Writing the Intersect function.
+out 1810 14m
+
+Sunday 8 Nov 2009
+in 1921 Resuming.
+2005 Reading complexity notes.

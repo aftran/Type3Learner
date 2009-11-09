@@ -80,10 +80,25 @@ let compareDissimTo e s t = compare (similarity e t) (similarity e s)
  * worried about minute performance gains. *)
 let maxSimilarity ms e = List.hd (List.sort (compareDissimTo e) ms)
 
-(* This function selects out of lx the entry for m that is the most simlar to
- * the monomial m (the 'environment').  It then returns that entry intersected
- * with e; and a list of  *)
-let intersect m ms =
-        match ms with
-        [] -> (m,[])
-        | h::hs -> ((FSet.inter h m), hs)
+(* ms is a monomial*int list.  Each element is a meaning (the monomial) paired
+ * with an index (the integer).  In Type3Learner, ms will be a list of
+ * (x,y), where:
+ *      x is the meaning of some morph in the lexicon
+ *      y is the index of that meaning associated with that morph
+ *
+ * Returns (a,b) where:
+ *      a is e intersected with the monomial in the head of ms
+ *      b is the integer in the head of ms 
+*)
+let intersect e ms =
+        let h,i = List.hd ms in
+        (FSet.inter h e), i
+
+(* Update the lexicon l, blocking rules b, and table t appropriately to account
+ * for observing the morph m in environment (maximal monomial) e.  Returns a
+ * triple: (the updated lexicon, the updated blocking rules, the updated table).
+ *)
+let read lex br tbl mrph env =
+        let hs = Hashtbl.find mrph in (* TODO.  Actually want to zip this with
+        [1,2,...].*)
+        (lex br tbl) (* This is an incomplete stub function! *)
