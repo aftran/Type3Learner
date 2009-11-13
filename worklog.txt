@@ -41,4 +41,19 @@ out 1810 14m
 
 Sunday 8 Nov 2009
 in 1921 Resuming.
-2005 Reading complexity notes.
+2005 Responding to complexity notes.  Working out some analysis stuff (like whether we can just multiply max steps*max work per step -- not obvious that it's okay to do that).
+out 2353 4h32m
+
+Tuesday 9 Nov 2009
+in 1824
+1824 Resuming complexity stuff.  Writing an e-mail arguing that we can still make the right predictions if we ignore complexity.
+out 2004 1h40m
+in 2220 Resuming.
+out 2355 1h35m; total 2h75m=3h15m; so far 7h47m
+
+Wednesday 10 Nov 2009
+in 1850 Programming.
+out 1950 1h; so far 8h47m
+
+Th 11 nov 2009
+in 2046 Programming/testing.

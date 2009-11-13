@@ -17,54 +17,43 @@ end)
 
 type monomial = FSet.t
 
+(* Construct a monomial that contains the values in list x. *)
+let monomial x = List.fold_right FSet.add x FSet.empty
+
+module Lexicon = Map.Make(struct
+        type t = morph
+        let compare = compare
+end)
+
 (* A lexicon is a table that maps morphs to tables that map integers to
  * monomials.  In other words, it lets each morph have multiple meanings
  * (=monomials), which are indexed by integers. *)
-type lexicon = (morph, monomial list) Hashtbl.t
-
-type blocker = (morph*int) * (morph*int)
-(* Might restructure the lexicon as a map so we can do something like
-*       type blocker = lexKey * lexKey                          *)
+type lexicon = monomial list Lexicon.t
 
 type seenness = Seen | Predicted
 
-type table = (monomial, (morph*int*seenness list)) Hashtbl.t
-(* This is a map from (maximal) monomials to lists of lexicon keys
- * (=monomial*int) associated with a seenness value. *)
+module Table = Map.Make(struct
+        type t = monomial
+        let compare = compare
+end)
 
-(* Symmetric difference of two sets. *)
-let delta a b = let u = FSet.union a b in
-                let i = FSet.inter a b in
-                FSet.diff u i
+type table = morph*int*seenness list Table.t
+(* A table is a map from (maximal) monomials to lists of morphs (with an integer
+ * index) associated with a seenness value.  In the lexicon, each morph is
+ * associated with a list of monomials:  morph -> [a; b; c; d].  Here, the int
+ * associated with a morph tells us which entry in [a; b; c; d ...] we have
+ * seen/predicted. *)
 
-let similar a b = let d = delta a b in
-                  1 == FSet.cardinal d
-
-(* The "minimized" version of h::hs, which is a list of monomials.  Minimizing
- * means combining (by intersection) any pair of monomials that differs by only
- * one element.  Non-idempotent.
- * TODO: This isn't quite right yet.  We need to make the list completely
- * minimized so that no two morphs are "similar" (as defined in the function
- * above).  One way to do this is by repeating the minimize process until we
- * reach a fixed point. *)
-let rec minimize h hs = match hs with
-        | [] -> h::hs
-        | m::ms -> if similar h m then 
-                let n = FSet.inter h m in
-                minimize n ms
+(*  Adds mean (a monomial) to the list of homonyms associated with the morpheme
+ * moph in lexicon l.  Returns the new lexicon. *)
+let update l mrph mean =
+        let newVal = if Lexicon.mem mrph l then
+                let means = Lexicon.find mrph l in
+                means @ [mean]
         else
-                m::minimize h ms
-
-(* Impure (imperative) function with the same signature as Hashtbl.add.
- * Adds mean (a monomial) to the list of homonyms associated with the morpheme
- * moph in lexicon l. *)
-let update l morph mean =
-        if Hashtbl.mem l morph then
-                let means = Hashtbl.find l morph in
-                Hashtbl.replace l morph (minimize mean means)
-        else
-                Hashtbl.add l morph [mean]
-                (* no need to minimize if the lexicon was already minimized *)
+                [mean]
+        in
+        Lexicon.add mrph newVal l
 
 (* The similarity of two monomials = the size of their intesection. *)
 let similarity s t = FSet.cardinal (FSet.inter s t)
@@ -98,7 +87,29 @@ let intersect e ms =
  * for observing the morph m in environment (maximal monomial) e.  Returns a
  * triple: (the updated lexicon, the updated blocking rules, the updated table).
  *)
-let read lex br tbl mrph env =
-        let hs = Hashtbl.find mrph in (* TODO.  Actually want to zip this with
-        [1,2,...].*)
-        (lex br tbl) (* This is an incomplete stub function! *)
+let learn lex br tbl m e =
+        (lex br tbl) (* TODO; this is an incomplete stub function! *)
+
+(* TESTS *)
+(* TODO: Move the tests to a different file. *)
+
+let m1 = monomial [("A","+"); ("B","-")]
+let m2 = monomial [("B","-"); ("G","+"); ("A","-")]
+let m3 = monomial [("C","+"); ("A","-")]
+let m4 = monomial [("D","+"); ("I","-"); ("J","-"); ("K","-")]
+let m5 = monomial [("E","+"); ("A","-")]
+let m6 = monomial [("A","-"); ("E","+")]
+let m7 = monomial [("A","-"); ("E","-")]
+
+(* TODO: I'm mis-using 'assert', but it works for now.  Will fix later. *)
+let t = assert (not (m1 = m2))
+let t = assert (m1 = m1)
+let t = assert (m6 = m7)
+
+let e = monomial [("A","+"); ("B","-"); ("C","-"); ("D","-"); ("E","-")]
+
+let t = assert (compareDissimTo e m1 m2 = (compare 1 2))
+let t = assert (compareDissimTo e m7 (monomial []) = (compare 0 0))
+
+let i = intersect e [(m1,5); (m2,3); (m3,2); (m4,1); (m5,4); (m6,7); (m7,6)]
+let t = assert (   i = ((FSet.inter e m1), 5)   )
