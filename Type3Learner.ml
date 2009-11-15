@@ -62,12 +62,8 @@ let similarity s t = FSet.cardinal (FSet.inter s t)
 let compareDissimTo e s t = compare (similarity e t) (similarity e s)
  
 (* For a monomial list ms and environment (=maximal monomial) e, output an
- * element of ms that is the most similar to e. 
- *
- * This is a wasteful implementation, because I'm sorting the whole list before
- * using only the first element.  But these lists will be short, and we're not
- * worried about minute performance gains. *)
-let maxSimilarity ms e = List.hd (List.sort (compareDissimTo e) ms)
+ * element of ms that is the most similar to e. *)
+let sortDissimTo e ms = List.sort (compareDissimTo e) ms
 
 (* ms is a monomial*int list.  Each element is a meaning (the monomial) paired
  * with an index (the integer).  In Type3Learner, ms will be a list of
@@ -84,11 +80,28 @@ let intersect e ms =
         let h,i = List.hd ms in
         (FSet.inter h e), i
 
+(* upto x = [1; 2; 3; ...; x] *)
+let upto x =
+        let rec build (i, is) = if i < 1 then
+                (i, is)
+        else
+                build (i-1, i::is) in
+        let (_, result) = build (x, []) in
+        result
+
+(* indexize [a; b; c; ...] = [(a,1); (b,2); (c,3; ...]. *)
+let indexize x =
+        let l = List.length x in
+        List.combine x (upto l)
+
 (* Update the lexicon l, blocking rules b, and table t appropriately to account
  * for observing the morph m in environment (maximal monomial) e.  Returns a
  * triple: (the updated lexicon, the updated blocking rules, the updated table).
  *)
 let learn lex br tbl m e =
+(*        let ms = try Lexicon.find m lex with Not_found -> [] in
+        (* ms = the list of meanings for the homophones of m *)
+        let ims = indexize ms in (* indexized ms *)   *)
         (lex br tbl) (* TODO; this is an incomplete stub function! *)
 
 (* TESTS *)
