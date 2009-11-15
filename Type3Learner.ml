@@ -74,6 +74,7 @@ let maxSimilarity ms e = List.hd (List.sort (compareDissimTo e) ms)
  * (x,y), where:
  *      x is the meaning of some morph in the lexicon
  *      y is the index of that meaning associated with that morph
+ * And in Type3Learner, this list will be already sorted by similarity to e.
  *
  * Returns (a,b) where:
  *      a is e intersected with the monomial in the head of ms
@@ -99,7 +100,7 @@ let m3 = monomial [("C","+"); ("A","-")]
 let m4 = monomial [("D","+"); ("I","-"); ("J","-"); ("K","-")]
 let m5 = monomial [("E","+"); ("A","-")]
 let m6 = monomial [("A","-"); ("E","+")]
-let m7 = monomial [("A","-"); ("E","-")]
+let m7 = monomial [("A","-"); ("E","+")]
 
 (* TODO: I'm mis-using 'assert', but it works for now.  Will fix later. *)
 let t = assert (not (m1 = m2))
