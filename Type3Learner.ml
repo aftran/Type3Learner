@@ -46,14 +46,19 @@ type table = morph*int*seenness list Table.t
 
 (*  Adds mean (a monomial) to the list of homonyms associated with the morpheme
  * moph in lexicon l.  Returns the new lexicon. *)
-let update l mrph mean =
-        let newVal = if Lexicon.mem mrph l then
-                let means = Lexicon.find mrph l in
+let update lex mrph mean =
+        let newVal = if Lexicon.mem mrph lex then
+                let means = Lexicon.find mrph lex in
                 means @ [mean]
         else
                 [mean]
         in
-        Lexicon.add mrph newVal l
+        Lexicon.add mrph newVal lex
+(* TODO: In the paper, update accepts an index, which is how it knows whether to
+ * replace an existing meaning or posit a new one.  We'll probably accept an
+ * index too, and use arrays instead of lists here, and implement it just as KP
+ * wrote it in the paper.  (Possibly requiring easy changes to Intersect and
+ * other functions.) *)
 
 (* The similarity of two monomials = the size of their intesection. *)
 let similarity s t = FSet.cardinal (FSet.inter s t)
@@ -93,14 +98,20 @@ let upto x =
         let rec build (i, is) = if i < 1 then
                 (i, is)
         else
-                build (i-1, i::is) in
+                build (i-1, i::is)
+        in
         let (_, result) = build (x, []) in
         result
 
-(* indexize [a; b; c; ...] = [(a,1); (b,2); (c,3; ...]. *)
+(* indexize [a; b; c; ...] = [(a,1); (b,2); (c,3); ...]. *)
 let indexize x =
         let l = List.length x in
         List.combine x (upto l)
+
+(* TODO: Document.  This is a stub. *)
+let rec getMeanBRTbl lex br tbl sms = monomial [], br, tbl
+(* TODO: Ask KP what this should do if everything in sms results in an overlap.
+ *)
 
 (* Update the lexicon l, blocking rules b, and table t appropriately to account
  * for observing the morph m in environment (maximal monomial) e.  Returns a
@@ -110,7 +121,12 @@ let learn lex br tbl m e =
         let ms = try Lexicon.find m lex with Not_found -> [] in
         (* ms = the list of meanings for the homophones of m *)
         let ims = indexize ms in (* indexized ms *) 
-        (lex, br, tbl) (* TODO; this is an incomplete stub function! *)
+        let sms = sortDissimTo e ims in
+        (* sms = the list of meanings, sorted by similarity to e, paired with
+         * their homophone indexes in the lexicon. *)
+        let mean, br2, tbl2 = getMeanBRTbl lex br tbl sms in
+        let lex2 = update lex m mean in
+        lex2, br2, tbl2
 
 (* TESTS *)
 (* TODO: Move the tests to a different file. *)
