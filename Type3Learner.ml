@@ -61,9 +61,17 @@ let similarity s t = FSet.cardinal (FSet.inter s t)
 (* Compare function for sorting monomials by dissimilarity to e. *)
 let compareDissimTo e s t = compare (similarity e t) (similarity e s)
  
-(* For a monomial list ms and environment (=maximal monomial) e, output an
- * element of ms that is the most similar to e. *)
-let sortDissimTo e ms = List.sort (compareDissimTo e) ms
+(* sortDissimTo sorts a monomial*int list so that the monomials are in
+ * decreasing order of similarity, and the integers are ignored but kept with
+ * the same monomials they were originally paired with.
+ *
+ * For a monomial*int list ms and environment (=maximal monomial) e,
+ * sortDissimTo e [(m1,1); (m2,2); (m3,3), ...] =
+ * [(mN(1),N(1)); (mN(2),N(2)); (mN(3),N(3)); ...],
+ * where mN(1), mN(2), ... are in decreasing order of similarity to e. *)
+let sortDissimTo e ms =
+        let f x y = compareDissimTo e (fst x) (fst y) in
+        List.sort f ms
 
 (* ms is a monomial*int list.  Each element is a meaning (the monomial) paired
  * with an index (the integer).  In Type3Learner, ms will be a list of
@@ -75,7 +83,7 @@ let sortDissimTo e ms = List.sort (compareDissimTo e) ms
  * Returns (a,b) where:
  *      a is e intersected with the monomial in the head of ms
  *      b is the integer in the head of ms 
-*)
+ *)
 let intersect e ms =
         let h,i = List.hd ms in
         (FSet.inter h e), i
@@ -99,10 +107,10 @@ let indexize x =
  * triple: (the updated lexicon, the updated blocking rules, the updated table).
  *)
 let learn lex br tbl m e =
-(*        let ms = try Lexicon.find m lex with Not_found -> [] in
+        let ms = try Lexicon.find m lex with Not_found -> [] in
         (* ms = the list of meanings for the homophones of m *)
-        let ims = indexize ms in (* indexized ms *)   *)
-        (lex br tbl) (* TODO; this is an incomplete stub function! *)
+        let ims = indexize ms in (* indexized ms *) 
+        (lex, br, tbl) (* TODO; this is an incomplete stub function! *)
 
 (* TESTS *)
 (* TODO: Move the tests to a different file. *)
@@ -120,10 +128,18 @@ let t = assert (not (m1 = m2))
 let t = assert (m1 = m1)
 let t = assert (m6 = m7)
 
-let e = monomial [("A","+"); ("B","-"); ("C","-"); ("D","-"); ("E","-")]
+let e = monomial [("A","+"); ("B","-"); ("C","+"); ("D","-"); ("E","-"); ("A","-")]
 
-let t = assert (compareDissimTo e m1 m2 = (compare 1 2))
-let t = assert (compareDissimTo e m7 (monomial []) = (compare 0 0))
+let t = assert (compareDissimTo e m1 m3 = -(compare 2 2))
+let t = assert (compareDissimTo e m2 (monomial []) = -(compare 2 0))
 
-let i = intersect e [(m1,5); (m2,3); (m3,2); (m4,1); (m5,4); (m6,7); (m7,6)]
-let t = assert (   i = ((FSet.inter e m1), 5)   )
+let ms = [(m1,1); (m2,2); (m3,3); (m5,4); (m4,5); (m6,6); (m7,7)]
+
+let i = intersect e ms
+let t = assert (   i = ((FSet.inter e m1), 1)   )
+
+let ms2 = [(m5,1); (m1,2); (m4,3);]
+let t = assert ([(m1,2); (m5,1); (m4,3)] = sortDissimTo e ms2)
+
+let t = assert ([1; 2; 3; 4; 5; 6] = upto 6)
+let t = assert ([] = upto 0)
