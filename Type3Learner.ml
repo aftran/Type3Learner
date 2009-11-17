@@ -55,7 +55,9 @@ type table = morph*int*seenness list Table.t
 (*  Adds mean (a monomial) to the list of homonyms associated with the morpheme
  * moph in lexicon l.  Returns the new lexicon. *)
 let update lex mrph idx mean =
-        let t = try Lexicon.find mrph lex with
+        let t = try
+                Lexicon.find mrph lex
+        with
                 Not_found -> IntMap.empty
         in
         let newVal = IntMap.add idx mean t in
@@ -86,16 +88,32 @@ let sortDissimTo e ms =
 
 (* ms is an int*monomial list.  e is a monomial.  total is an integer.
  * intersect e ms total = (a,b), where:
- *      a is e intersected with the monomial in the head of ms
- *      b is the integer in the head of ms (if ms has a head) or total+1.
+ *      a is e intersected with the monomial in the head of ms (if ms has a
+ *      head) or just e.
+ *      b is the integer in the head of ms (if ms has a head) or just total+1.
  *)
 let intersect e ms total = match ms with
         | pair::pairs -> let i,h = pair in
         (FSet.inter h e), i
         | [] -> e, total+1
 
+(* Return (a new table, a new blocking graph) as if we are adding
+ * (m -> i -> mean) to the lexicon. *)
+let synchronize tbl br m i mean e = tbl, br (* TODO: Stub. *)
+
+(* TODO: Stub.  Also, do we have to edit br in both overlap and synchronize?
+ * I'm haping to make overlap not edit br. *)
+let overlap tbl br = false, br
+
 (* TODO: Document.  This is a stub. *)
-let rec getMeanBRTbl lex br tbl sms = monomial [], 1, br, tbl
+let rec getHypothesis lex br tbl m e ms total = 
+        let mean, i = intersect e ms total in 
+        let tbl2, br2 = synchronize tbl br m i mean e in
+        let o, br3 = overlap tbl2 br2 in
+        if o then
+               getHypothesis lex br tbl m e (List.tl ms) total 
+        else
+                monomial [], 1, br3, tbl
 (* TODO: Ask KP what this should do if everything in sms results in an overlap.
  *)
 
@@ -116,7 +134,7 @@ let learn lex br tbl m e =
         let sms = sortDissimTo e ims in
         (* sms = the list of meanings, sorted by similarity to e, paired with
          * their homophone indexes in the lexicon. *)
-        let mean, idx, br2, tbl2 = getMeanBRTbl lex br tbl sms in
+        let mean, idx, br2, tbl2 = getHypothesis lex br tbl m e sms (List.length sms) in
         let lex2 = update lex m idx mean in
         lex2, br2, tbl2
 
