@@ -20,15 +20,24 @@ type monomial = FSet.t
 (* Construct a monomial that contains the values in list x. *)
 let monomial x = List.fold_right FSet.add x FSet.empty
 
+module IntMap = Map.Make(struct
+        type t = int
+        let compare = compare
+end)
+
+(* A 'homophones' is a table that maps integers to monomials.  The lexicon
+ * (below) will associate a morph with a 'homophones'. *)
+type homophones = monomial IntMap.t
+
 module Lexicon = Map.Make(struct
         type t = morph
         let compare = compare
 end)
 
-(* A lexicon is a table that maps morphs to tables that map integers to
- * monomials.  In other words, it lets each morph have multiple meanings
- * (=monomials), which are indexed by integers. *)
-type lexicon = monomial list Lexicon.t
+(* A lexicon is a table that maps morphs to 'homophones' tables.  In other
+ * words, it lets each morph have multiple meanings (=monomials), which are
+ * indexed by integers. *)
+type lexicon = homophones Lexicon.t
 
 type seenness = Seen | Predicted
 
