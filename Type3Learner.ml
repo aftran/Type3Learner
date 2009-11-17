@@ -84,27 +84,22 @@ let sortDissimTo e ms =
         let f x y = compareDissimTo e (snd x) (snd y) in
         List.sort f ms
 
-(* ms is a monomial*int list.  Each element is a meaning (the monomial) paired
- * with an index (the integer).  In Type3Learner, ms will be a list of
- * (x,y), where:
- *      x is the meaning of some morph in the lexicon
- *      y is the index of that meaning associated with that morph
- * And in Type3Learner, this list will be already sorted by similarity to e.
- *
- * Returns (a,b) where:
+(* ms is an int*monomial list.  e is a monomial.  total is an integer.
+ * intersect e ms total = (a,b), where:
  *      a is e intersected with the monomial in the head of ms
- *      b is the integer in the head of ms 
+ *      b is the integer in the head of ms (if ms has a head) or total+1.
  *)
-let intersect e ms =
-        let i,h = List.hd ms in
+let intersect e ms total = match ms with
+        | pair::pairs -> let i,h = pair in
         (FSet.inter h e), i
+        | [] -> e, total+1
 
 (* TODO: Document.  This is a stub. *)
 let rec getMeanBRTbl lex br tbl sms = monomial [], 1, br, tbl
 (* TODO: Ask KP what this should do if everything in sms results in an overlap.
  *)
 
-(* lexeme2list l is the list of (key,value) pairs in map l, in no particular
+(* lexeme2list l = the list of (key,value) pairs in l, in no particular
  * order. *)
 let lexeme2list l =
         let f k d a = (k,d)::a in
@@ -148,8 +143,9 @@ let t = assert (compareDissimTo e m2 (monomial []) = -(compare 2 0))
 
 let ms = [(1,m1); (2,m2); (3,m3); (4,m5); (5,m4); (6,m6); (7,m7)]
 
-let i = intersect e ms
+let i = intersect e ms 0
 let t = assert (   i = ((FSet.inter e m1), 1)   )
+let t = assert (   (e,1) = (intersect e [] 0)    )
 
 let ms2 = [(1,m5); (2,m1); (3,m4);]
 let t = assert ([(2,m1); (1,m5); (3,m4)] = sortDissimTo e ms2)
