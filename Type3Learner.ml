@@ -25,9 +25,8 @@ module IntMap = Map.Make(struct
         let compare = compare
 end)
 
-(* A 'homophones' is a table that maps integers to monomials.  The lexicon
- * (below) will associate a morph with a 'homophones'. *)
-type homophones = monomial IntMap.t
+(* A lexeme is a table that maps integers to monomials. *)
+type lexeme = monomial IntMap.t
 
 module Lexicon = Map.Make(struct
         type t = morph
@@ -37,7 +36,7 @@ end)
 (* A lexicon is a table that maps morphs to 'homophones' tables.  In other
  * words, it lets each morph have multiple meanings (=monomials), which are
  * indexed by integers. *)
-type lexicon = homophones Lexicon.t
+type lexicon = lexeme Lexicon.t
 
 type seenness = Seen | Predicted
 
@@ -55,13 +54,11 @@ type table = morph*int*seenness list Table.t
 
 (*  Adds mean (a monomial) to the list of homonyms associated with the morpheme
  * moph in lexicon l.  Returns the new lexicon. *)
-let update lex mrph mean =
-        let newVal = if Lexicon.mem mrph lex then
-                let means = Lexicon.find mrph lex in
-                means @ [mean]
-        else
-                [mean]
+let update lex mrph idx mean =
+        let t = try Lexicon.find mrph lex with
+                Not_found -> IntMap.empty
         in
+        let newVal = IntMap.add idx mean t in
         Lexicon.add mrph newVal lex
 (* TODO: In the paper, update accepts an index, which is how it knows whether to
  * replace an existing meaning or posit a new one.  We'll probably accept an
@@ -69,7 +66,7 @@ let update lex mrph mean =
  * wrote it in the paper.  (Possibly requiring easy changes to Intersect and
  * other functions.) *)
 
-(* The similarity of two monomials = the size of their intesection. *)
+(* similarity s t = the cardinality of s intersected with t. *)
 let similarity s t = FSet.cardinal (FSet.inter s t)
 
 (* Compare function for sorting monomials by dissimilarity to e. *)
@@ -84,7 +81,7 @@ let compareDissimTo e s t = compare (similarity e t) (similarity e s)
  * [(mN(1),N(1)); (mN(2),N(2)); (mN(3),N(3)); ...],
  * where mN(1), mN(2), ... are in decreasing order of similarity to e. *)
 let sortDissimTo e ms =
-        let f x y = compareDissimTo e (fst x) (fst y) in
+        let f x y = compareDissimTo e (snd x) (snd y) in
         List.sort f ms
 
 (* ms is a monomial*int list.  Each element is a meaning (the monomial) paired
@@ -99,42 +96,33 @@ let sortDissimTo e ms =
  *      b is the integer in the head of ms 
  *)
 let intersect e ms =
-        let h,i = List.hd ms in
+        let i,h = List.hd ms in
         (FSet.inter h e), i
 
-(* upto x = [1; 2; 3; ...; x] *)
-let upto x =
-        let rec build (i, is) = if i < 1 then
-                (i, is)
-        else
-                build (i-1, i::is)
-        in
-        let (_, result) = build (x, []) in
-        result
-
-(* indexize [a; b; c; ...] = [(a,1); (b,2); (c,3); ...]. *)
-let indexize x =
-        let l = List.length x in
-        List.combine x (upto l)
-
 (* TODO: Document.  This is a stub. *)
-let rec getMeanBRTbl lex br tbl sms = monomial [], br, tbl
+let rec getMeanBRTbl lex br tbl sms = monomial [], 1, br, tbl
 (* TODO: Ask KP what this should do if everything in sms results in an overlap.
  *)
+
+(* lexeme2list l is the list of (key,value) pairs in map l, in no particular
+ * order. *)
+let lexeme2list l =
+        let f k d a = (k,d)::a in
+        IntMap.fold f l []
 
 (* Update the lexicon l, blocking rules b, and table t appropriately to account
  * for observing the morph m in environment (maximal monomial) e.  Returns a
  * triple: (the updated lexicon, the updated blocking rules, the updated table).
  *)
 let learn lex br tbl m e =
-        let ms = try Lexicon.find m lex with Not_found -> [] in
+        let ms = try Lexicon.find m lex with Not_found -> IntMap.empty in
         (* ms = the list of meanings for the homophones of m *)
-        let ims = indexize ms in (* indexized ms *) 
+        let ims = lexeme2list ms in (* indexized ms *) 
         let sms = sortDissimTo e ims in
         (* sms = the list of meanings, sorted by similarity to e, paired with
          * their homophone indexes in the lexicon. *)
-        let mean, br2, tbl2 = getMeanBRTbl lex br tbl sms in
-        let lex2 = update lex m mean in
+        let mean, idx, br2, tbl2 = getMeanBRTbl lex br tbl sms in
+        let lex2 = update lex m idx mean in
         lex2, br2, tbl2
 
 (* TESTS *)
@@ -158,13 +146,10 @@ let e = monomial [("A","+"); ("B","-"); ("C","+"); ("D","-"); ("E","-"); ("A","-
 let t = assert (compareDissimTo e m1 m3 = -(compare 2 2))
 let t = assert (compareDissimTo e m2 (monomial []) = -(compare 2 0))
 
-let ms = [(m1,1); (m2,2); (m3,3); (m5,4); (m4,5); (m6,6); (m7,7)]
+let ms = [(1,m1); (2,m2); (3,m3); (4,m5); (5,m4); (6,m6); (7,m7)]
 
 let i = intersect e ms
 let t = assert (   i = ((FSet.inter e m1), 1)   )
 
-let ms2 = [(m5,1); (m1,2); (m4,3);]
-let t = assert ([(m1,2); (m5,1); (m4,3)] = sortDissimTo e ms2)
-
-let t = assert ([1; 2; 3; 4; 5; 6] = upto 6)
-let t = assert ([] = upto 0)
+let ms2 = [(1,m5); (2,m1); (3,m4);]
+let t = assert ([(2,m1); (1,m5); (3,m4)] = sortDissimTo e ms2)
