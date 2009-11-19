@@ -10,7 +10,7 @@ type feature = string*string
  * of the feature hierarchy into account.
  * As a consequence, I can represent monomials as unstructed sets of features. *)
 
-module FSet = Set.Make (struct
+module FSet = Set.Make(struct
         type t = feature
         let compare = compare
 end)
@@ -40,17 +40,19 @@ type lexicon = lexeme Lexicon.t
 
 type seenness = Seen | Predicted
 
+module MSet = Set.Make(struct
+        type t = morph*int
+        let compare = compare
+end)
+
 module Table = Map.Make(struct
         type t = monomial
         let compare = compare
 end)
 
-type table = morph*int*seenness list Table.t
-(* A table is a map from (maximal) monomials to lists of morphs (with an integer
- * index) associated with a seenness value.  In the lexicon, each morph is
- * associated with a list of monomials:  morph -> [a; b; c; d].  Here, the int
- * associated with a morph tells us which entry in [a; b; c; d ...] we have
- * seen/predicted. *)
+(* A table is a map from (maximal) monomials to sets of morphs with integer
+ * indexes. *)
+type table = MSet.t Table.t
 
 (*  Adds mean (a monomial) to the list of homonyms associated with the morpheme
  * moph in lexicon l.  Returns the new lexicon. *)
@@ -99,21 +101,22 @@ let intersect e ms total = match ms with
 
 (* Return (a new table, a new blocking graph) as if we are adding
  * (m -> i -> mean) to the lexicon. *)
-let synchronize tbl br m i mean e = tbl, br (* TODO: Stub. *)
+let synchronize s p br m i mean e = s, p, br (* TODO: Stub. *)
 
 (* TODO: Stub.  Also, do we have to edit br in both overlap and synchronize?
- * I'm haping to make overlap not edit br. *)
-let overlap tbl br = false, br
+ * I'm hoping to make overlap not edit br. *)
+let overlap s p br = false, br
 
 (* TODO: Document.  This is a stub. *)
-let rec getHypothesis lex br tbl m e ms total = 
+let rec getHypothesis lex br s p m e ms total = 
         let mean, i = intersect e ms total in 
-        let tbl2, br2 = synchronize tbl br m i mean e in
-        let o, br3 = overlap tbl2 br2 in
+        let s2, p2, br2 = synchronize s p br m i mean e in
+        let o, br3 = overlap s2 p2 br2 in
         if o then
-               getHypothesis lex br tbl m e (List.tl ms) total 
+                (* Start over without the head of ms *)
+                getHypothesis lex br s p m e (List.tl ms) total 
         else
-                monomial [], 1, br3, tbl
+                monomial [], 1, br3, s2, p2 
 (* TODO: Ask KP what this should do if everything in sms results in an overlap.
  *)
 
@@ -127,16 +130,16 @@ let lexeme2list l =
  * for observing the morph m in environment (maximal monomial) e.  Returns a
  * triple: (the updated lexicon, the updated blocking rules, the updated table).
  *)
-let learn lex br tbl m e =
+let learn lex br s p m e =
         let ms = try Lexicon.find m lex with Not_found -> IntMap.empty in
         (* ms = the list of meanings for the homophones of m *)
         let ims = lexeme2list ms in (* indexized ms *) 
         let sms = sortDissimTo e ims in
         (* sms = the list of meanings, sorted by similarity to e, paired with
          * their homophone indexes in the lexicon. *)
-        let mean, idx, br2, tbl2 = getHypothesis lex br tbl m e sms (List.length sms) in
+        let mean, idx, br2, s2, p2 = getHypothesis lex br s p m e sms (List.length sms) in
         let lex2 = update lex m idx mean in
-        lex2, br2, tbl2
+        lex2, br2, s2, p2 
 
 (* TESTS *)
 (* TODO: Move the tests to a different file. *)
