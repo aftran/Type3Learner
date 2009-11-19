@@ -54,21 +54,35 @@ end)
  * indexes. *)
 type table = MSet.t Table.t
 
-(*  Adds mean (a monomial) to the list of homonyms associated with the morpheme
- * moph in lexicon l.  Returns the new lexicon. *)
-let update lex mrph idx mean =
-        let t = try
-                Lexicon.find mrph lex
-        with
-                Not_found -> IntMap.empty
-        in
-        let newVal = IntMap.add idx mean t in
-        Lexicon.add mrph newVal lex
-(* TODO: In the paper, update accepts an index, which is how it knows whether to
- * replace an existing meaning or posit a new one.  We'll probably accept an
- * index too, and use arrays instead of lists here, and implement it just as KP
- * wrote it in the paper.  (Possibly requiring easy changes to Intersect and
- * other functions.) *)
+(* Graph type for the blocking rules: *)
+
+module IndexedMorph = struct
+  type t = morph*int
+  let compare = compare
+  let hash = Hashtbl.hash
+  let equal = (=)
+end
+
+module G = Graph.Persistent.Digraph.Concrete(IndexedMorph)
+
+type graph = G.t
+
+module DFS = Graph.Traverse.Dfs(G)
+
+(* has_overlap x is true iff x has a cycle. *)
+let has_overlap = DFS.has_cycle
+
+(* meanings m l = the lexeme associated with morph m in lexicon l, if it exists,
+ * otherwise the empty lexeme. *)
+let meanings (m:morph) (l:lexicon) =
+        try Lexicon.find m l with Not_found -> IntMap.empty
+
+(*  update l m i mn = the lexicon l with the added meaning mn associated
+ *  with index i of morph m. *)
+let update (l:lexicon) (m:morph) (i:int) (mn:monomial) =
+        let t = meanings m l in
+        let newVal = IntMap.add i mn t in
+        Lexicon.add m newVal l
 
 (* similarity s t = the cardinality of s intersected with t. *)
 let similarity s t = FSet.cardinal (FSet.inter s t)
@@ -76,47 +90,53 @@ let similarity s t = FSet.cardinal (FSet.inter s t)
 (* Compare function for sorting monomials by dissimilarity to e. *)
 let compareDissimTo e s t = compare (similarity e t) (similarity e s)
  
-(* sortDissimTo sorts a monomial*int list so that the monomials are in
- * decreasing order of similarity, and the integers are ignored but kept with
- * the same monomials they were originally paired with.
+(* sortDissimTo e ms = ms sorted so that the monomials are in decreasing order
+ * of similarity to e.  The integers paired with the monomials are ignored but
+ * kept with the same monomials they were originally paired with.
  *
  * For a monomial*int list ms and environment (=maximal monomial) e,
  * sortDissimTo e [(m1,1); (m2,2); (m3,3), ...] =
  * [(mN(1),N(1)); (mN(2),N(2)); (mN(3),N(3)); ...],
  * where mN(1), mN(2), ... are in decreasing order of similarity to e. *)
-let sortDissimTo e ms =
+let sortDissimTo (e:monomial) (ms:(int*monomial) list) =
         let f x y = compareDissimTo e (snd x) (snd y) in
         List.sort f ms
 
-(* ms is an int*monomial list.  e is a monomial.  total is an integer.
+(* With ms = [(4,m1); (9,m2); (1,m3); ...] (for example),
  * intersect e ms total = (a,b), where:
- *      a is e intersected with the monomial in the head of ms (if ms has a
+ *      a = e intersected with the monomial in the head of ms (if ms has a
  *      head) or just e.
- *      b is the integer in the head of ms (if ms has a head) or just total+1.
+ *      b = the integer in the head of ms (if ms has a head) or just total+1.
  *)
-let intersect e ms total = match ms with
-        | pair::pairs -> let i,h = pair in
-        (FSet.inter h e), i
-        | [] -> e, total+1
+let intersect (e:monomial) (ms:(int*monomial) list) (total:int) =
+        match ms with
+        | (i,h)::_ -> i, (FSet.inter h e)
+        | [] -> total+1, e
 
 (* Return (a new table, a new blocking graph) as if we are adding
  * (m -> i -> mean) to the lexicon. *)
-let synchronize s p br m i mean e = s, p, br (* TODO: Stub. *)
+let synchronize
+        (s:table) (p:table) (br:graph) (m:morph) (i:int) (mn:monomial) (e:monomial)
+=
+        s, p, br (* TODO: Stub. *)
 
 (* TODO: Stub.  Also, do we have to edit br in both overlap and synchronize?
  * I'm hoping to make overlap not edit br. *)
-let overlap s p br = false, br
+let overlap (s:table) (p:table) (br:graph) = false, br
 
 (* TODO: Document.  This is a stub. *)
-let rec getHypothesis lex br s p m e ms total = 
-        let mean, i = intersect e ms total in 
+let rec getHypothesis
+        (lex:lexicon) (br:graph) (s:table) (p:table) (m:morph)
+        (e:monomial) (ms:(int*monomial) list) (total:int)
+=
+        let i, mean = intersect e ms total in
         let s2, p2, br2 = synchronize s p br m i mean e in
         let o, br3 = overlap s2 p2 br2 in
         if o then
                 (* Start over without the head of ms *)
-                getHypothesis lex br s p m e (List.tl ms) total 
+                getHypothesis lex br s p m e (List.tl ms) total
         else
-                monomial [], 1, br3, s2, p2 
+                mean, i, br3, s2, p2
 (* TODO: Ask KP what this should do if everything in sms results in an overlap.
  *)
 
@@ -130,16 +150,16 @@ let lexeme2list l =
  * for observing the morph m in environment (maximal monomial) e.  Returns a
  * triple: (the updated lexicon, the updated blocking rules, the updated table).
  *)
-let learn lex br s p m e =
-        let ms = try Lexicon.find m lex with Not_found -> IntMap.empty in
+let learn (lex:lexicon) (br:graph) (s:table) (p:table) (m:morph) (e:monomial) =
+        let ms = meanings m lex in
         (* ms = the list of meanings for the homophones of m *)
-        let ims = lexeme2list ms in (* indexized ms *) 
+        let ims = lexeme2list ms in (* indexized ms *)
         let sms = sortDissimTo e ims in
         (* sms = the list of meanings, sorted by similarity to e, paired with
          * their homophone indexes in the lexicon. *)
         let mean, idx, br2, s2, p2 = getHypothesis lex br s p m e sms (List.length sms) in
         let lex2 = update lex m idx mean in
-        lex2, br2, s2, p2 
+        lex2, br2, s2, p2
 
 (* TESTS *)
 (* TODO: Move the tests to a different file. *)
@@ -165,8 +185,8 @@ let t = assert (compareDissimTo e m2 (monomial []) = -(compare 2 0))
 let ms = [(1,m1); (2,m2); (3,m3); (4,m5); (5,m4); (6,m6); (7,m7)]
 
 let i = intersect e ms 0
-let t = assert (   i = ((FSet.inter e m1), 1)   )
-let t = assert (   (e,1) = (intersect e [] 0)    )
+let t = assert (   i = (1, (FSet.inter e m1))   )
+let t = assert (   (1,e) = (intersect e [] 0)    )
 
 let ms2 = [(1,m5); (2,m1); (3,m4);]
 let t = assert ([(2,m1); (1,m5); (3,m4)] = sortDissimTo e ms2)
