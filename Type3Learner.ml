@@ -76,9 +76,6 @@ type graph = G.t
 
 module DFS = Graph.Traverse.Dfs(G)
 
-(* has_overlap x is true iff x has a cycle. *)
-let has_overlap = DFS.has_cycle
-
 (* meanings m l = the lexeme associated with morph m in lexicon l, if it exists,
  * otherwise the empty lexeme. *)
 let meanings (m:morph) (l:lexicon) =
@@ -127,25 +124,27 @@ let synchronize
 =
         s, p, br (* TODO: Stub. *)
 
-(* TODO: Stub.  Also, do we have to edit br in both overlap and synchronize?
- * I'm hoping to make overlap not edit br. *)
-let overlap (s:table) (p:table) (br:graph) = false, br
+(* overlap x is true iff x has a cycle. *)
+let overlap = DFS.has_cycle
 
-(* TODO: Document.  This is a stub. *)
+(* TODO: Document. *)
 let rec getHypothesis
         (lex:lexicon) (br:graph) (s:table) (p:table) (m:morph)
         (e:monomial) (ms:(int*monomial) list) (total:int)
 =
         let i, mean = intersect e ms total in
         let s2, p2, br2 = synchronize s p br m i mean e in
-        let o, br3 = overlap s2 p2 br2 in
-        if o then
+        if overlap br2 then
                 (* Start over without the head of ms *)
                 getHypothesis lex br s p m e (List.tl ms) total
+                (* Question: what happens if everything in ms results in an
+                 * overlap?
+                 * Answer: No, once ms becomes empty, getHypothesis
+                 * posits a new homophone of m, which will never overlap with
+                 * anything.
+                 * Upshot: this recursion will be finite.*)
         else
-                mean, i, br3, s2, p2
-(* TODO: Ask KP what this should do if everything in sms results in an overlap.
- *)
+                mean, i, br2, s2, p2
 
 (* lexeme2list l = the list of (key,value) pairs in l, in no particular
  * order. *)
