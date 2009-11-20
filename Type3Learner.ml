@@ -38,8 +38,6 @@ end)
  * indexed by integers. *)
 type lexicon = lexeme Lexicon.t
 
-type seenness = Seen | Predicted
-
 module MSet = Set.Make(struct
         type t = morph*int
         let compare = compare
@@ -53,6 +51,15 @@ end)
 (* A table is a map from (maximal) monomials to sets of morphs with integer
  * indexes. *)
 type table = MSet.t Table.t
+
+(* matches t e = the union of all values of t whose key is a subset of e. *)
+let matches (t:table) (e:monomial) =
+        let (<) x y = FSet.subset x y in
+        let (+) x y = MSet.union x y in
+        let f (k:monomial) (d:MSet.t) a =
+                if k < e then a + d else a
+        in
+        Table.fold f t MSet.empty
 
 (* Graph type for the blocking rules: *)
 
