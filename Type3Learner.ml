@@ -53,7 +53,7 @@ end)
 type table = MSet.t Table.t
 
 (* matches t e = the union of all values of t whose key is a subset of e. *)
-let matches (t:table) (e:monomial) =
+let matches (e:monomial) (t:table) =
         let (<) x y = FSet.subset x y in
         let (+) x y = MSet.union x y in
         let f (k:monomial) (d:MSet.t) a =
@@ -76,17 +76,33 @@ type graph = G.t
 
 module DFS = Graph.Traverse.Dfs(G)
 
+(* Functions for updating lexicons: *)
+
 (* meanings m l = the lexeme associated with morph m in lexicon l, if it exists,
  * otherwise the empty lexeme. *)
 let meanings (m:morph) (l:lexicon) =
         try Lexicon.find m l with Not_found -> IntMap.empty
 
-(*  update l m i mn = the lexicon l with the added meaning mn associated
+(*  updateLex l m i mn = the lexicon l with the added meaning mn associated
  *  with index i of morph m. *)
-let update (l:lexicon) (m:morph) (i:int) (mn:monomial) =
-        let t = meanings m l in
-        let newVal = IntMap.add i mn t in
+let updateLex (l:lexicon) (m:morph) (i:int) (mn:monomial) =
+        let x = meanings m l in
+        let newVal = IntMap.add i mn x in
         Lexicon.add m newVal l
+
+(* Two very similar functions for updating tables: *)
+
+(* morphs e t = the MSet.t associated with monomial e in table t, if it exists,
+ * otherwise the empty MSet.t. *)
+let morphs (e:monomial) (t:table) =
+        try Table.find e t with Not_found-> MSet.empty
+
+(* updateTable t e m i = the table t with the added pair (m,i) in the set
+ * associated with e. *)
+let updateTable (t:table) (e:monomial) (mi:morph*int) =
+        let x = morphs e t in
+        let newVal = MSet.add mi x in
+        Table.add e newVal t
 
 (* similarity s t = the cardinality of s intersected with t. *)
 let similarity s t = FSet.cardinal (FSet.inter s t)
@@ -117,12 +133,28 @@ let intersect (e:monomial) (ms:(int*monomial) list) (total:int) =
         | (i,h)::_ -> i, (FSet.inter h e)
         | [] -> total+1, e
 
-(* Return (a new table, a new blocking graph) as if we are adding
- * (m -> i -> mean) to the lexicon. *)
+(* updateGraph br seen predicted = br with a new edge added for each pair in
+ * the cartesion product seenXpredicted. *)
+let updateGraph (br:graph) (seen:MSet.t) (predicted:MSet.t) =
+        let f m a =
+                let g n b = G.add_edge b m n in (* m blocks n now *)
+                MSet.fold g predicted a
+        in
+        MSet.fold f seen br
+
+
+(* Return (a new 'seen' table, a new 'predicted' table, a new blocking graph) as
+ * if we are adding (m -> i -> mean) to the lexicon. *)
 let synchronize
         (s:table) (p:table) (br:graph) (m:morph) (i:int) (mn:monomial) (e:monomial)
 =
-        s, p, br (* TODO: Stub. *)
+        let s2 = updateTable s e  (m,i) in
+        let p2 = updateTable p mn (m,i) in
+        (* We really should only do this next part if s2 or p2 have changed. *)
+        let seen      = morphs  e s in
+        let predicted = matches e p in
+        let br2 = updateGraph br seen predicted in
+        s2, p2, br2 (* TODO: Stub. *)
 
 (* overlap x is true iff x has a cycle. *)
 let overlap = DFS.has_cycle
@@ -164,7 +196,7 @@ let learn (lex:lexicon) (br:graph) (s:table) (p:table) (m:morph) (e:monomial) =
         (* sms = the list of meanings, sorted by similarity to e, paired with
          * their homophone indexes in the lexicon. *)
         let mean, idx, br2, s2, p2 = getHypothesis lex br s p m e sms (List.length sms) in
-        let lex2 = update lex m idx mean in
+        let lex2 = updateLex lex m idx mean in
         lex2, br2, s2, p2
 
 (* TESTS *)
