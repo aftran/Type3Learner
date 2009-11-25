@@ -33,9 +33,7 @@ module Lexicon = Map.Make(struct
         let compare = compare
 end)
 
-(* A lexicon is a table that maps morphs to 'homophones' tables.  In other
- * words, it lets each morph have multiple meanings (=monomials), which are
- * indexed by integers. *)
+(* A lexicon is a table that maps morphs to lexemes. *)
 type lexicon = lexeme Lexicon.t
 
 module MSet = Set.Make(struct
@@ -154,12 +152,14 @@ let synchronize
         let seen      = morphs  e s in
         let predicted = matches e p in
         let br2 = updateGraph br seen predicted in
-        s2, p2, br2 (* TODO: Stub. *)
+        s2, p2, br2
 
 (* overlap x is true iff x has a cycle. *)
 let overlap = DFS.has_cycle
 
-(* TODO: Document. *)
+(* Return a meaning, morph index, blocking rule graph, seen-table, and
+ * predicted-table in response to the given hypothesis (lex, br) and the
+ * witnessing of morph m in environment e. *)
 let rec getHypothesis
         (lex:lexicon) (br:graph) (s:table) (p:table) (m:morph)
         (e:monomial) (ms:(int*monomial) list) (total:int)
@@ -198,6 +198,22 @@ let learn (lex:lexicon) (br:graph) (s:table) (p:table) (m:morph) (e:monomial) =
         let mean, idx, br2, s2, p2 = getHypothesis lex br s p m e sms (List.length sms) in
         let lex2 = updateLex lex m idx mean in
         lex2, br2, s2, p2
+
+type text = (morph*monomial) list
+
+(* type3learn t = (lex, br, s, p), where:
+ *      lex is a lexicon,
+ *      br is a graph of blocking rules,
+ *      s is a table that maps monomials to sets of morphs mitnessed in the
+ *      environment of the monomial,
+ *      p is a table that maps monomials to sets of morphs predicted in
+ *      environments that are supersets of that monomial.
+ * lex and br together specify the hypothesis that Type3Learner has acquired
+ * given text t.  s and p contain no new information but improve the efficiency
+ * of the learner. *)
+let type3learn (t:text) =
+        let f (lex, br, s, p) (m,e) = learn lex br s p m e in
+        List.fold_left f (Lexicon.empty, G.empty, Table.empty, Table.empty) t
 
 (* TESTS *)
 (* TODO: Move the tests to a different file. *)
