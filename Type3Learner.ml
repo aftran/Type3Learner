@@ -244,3 +244,15 @@ let t = assert (   (1,e) = (intersect e [] 0)    )
 
 let ms2 = [(1,m5); (2,m1); (3,m4);]
 let t = assert ([(2,m1); (1,m5); (3,m4)] = sortDissimTo e ms2)
+
+(* Test a first step in learning: *)
+let mn = monomial [("A","-"); ("B","-"); ("C","-")]
+let (lex, br, s, p) = learn
+                Lexicon.empty G.empty Table.empty Table.empty "hello" mn
+let expectedLex = updateLex Lexicon.empty "hello" 1 mn
+let t = assert ( lex = expectedLex )
+let t = assert ( br = G.empty )
+let expectedS = updateTable Table.empty mn ("hello",1)
+let t = assert ( s = expectedS )
+let expectedP = expectedS
+let t = assert ( p = expectedS )
