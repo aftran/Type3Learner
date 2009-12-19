@@ -50,7 +50,9 @@ end)
  * indexes. *)
 type table = MSet.t Table.t
 
-(* matches e t = the union of all values of t whose key is a subset of e. *)
+(* In terms of Type3Learner, matches e t = the morphs predicted to appear in
+ * environment e, according to table t.
+ * matches e t = the union of all values of t whose key is a subset of e. *)
 let matches (e:monomial) (t:table) =
         let (<) x y = FSet.subset x y in
         let (+) x y = MSet.union x y in
@@ -80,7 +82,7 @@ module G = Graph.Persistent.Graph.Concrete(IndexedMorph)
 
 type graph = G.t
 
-(* Functions for updating lexicons: *)
+(* Functions for updating a hypothesis: *)
 
 (* meanings m l = the lexeme associated with morph m in lexicon l, if it exists,
  * otherwise the empty lexeme. *)
@@ -94,9 +96,9 @@ let updateLex (l:lexicon) (m:morph) (i:int) (mn:monomial) =
         let newVal = IntMap.add i mn x in
         Lexicon.add m newVal l
 
-(* Two very similar functions for updating tables: *)
-
-(* morphs e t = the MSet.t associated with monomial e in table t, if it exists,
+(* In terms of Type3Learner, morphs e t = the morphs seen in environment e,
+ * according to table t.
+ * morphs e t = the MSet.t associated with monomial e in table t, if it exists,
  * otherwise the empty MSet.t. *)
 let morphs (e:monomial) (t:table) =
         try Table.find e t with Not_found-> MSet.empty
@@ -137,17 +139,33 @@ let intersect (e:monomial) (ms:(int*monomial) list) (total:int) =
         | (i,h)::_ -> i, (FSet.inter h e)
         | [] -> total+1, e
 
+(* new_block br m n =
+ *       if m == n then
+ *               br
+ *       else
+ *               br with a new edge from m to n.
+ * In terms of Type3Learner, new_block br m n = the blocking rules in br with the
+ * extra rule that m blocks n, except never let something block itself. *)
+let new_block (br:digraph) (m:IndexedMorph.t) (n:IndexedMorph.t) =
+        if m = n then
+                br
+        else
+                DG.add_edge br m n
+
 (* updateDigraph br seen predicted = br with a new edge added for each pair in
  * the cartesian product seen*predicted. *)
 let updateDigraph (br:digraph) (seen:MSet.t) (predicted:MSet.t) =
         let f m a =
-                let g n b = DG.add_edge b m n in (* m blocks n now *)
+                let g n b = new_block b m n in (* m blocks n now *)
                 MSet.fold g predicted a
         in
         MSet.fold f seen br
 
 (* updateGraph v seen = v with a new edge added for each pair in the cartesian
  * product seen*seen. *)
+(* TODO: We could probably just make sure the elements are all reachable, then
+ * take the transitive closure.  Since at the moment we're creating the
+ * transitive closure anyway. *)
 let updateGraph (v:graph) (seen:MSet.t) =
         let f m a =
                 let g n b = G.add_edge b m n in (* m,n are in free variation now *)
@@ -164,7 +182,6 @@ let synchronize
 =
         let s2 = updateTable s e  (m,i) in
         let p2 = updateTable p mn (m,i) in
-        (* We really should only do this next part if s2 or p2 have changed. *)
         let seen      = morphs  e s in
         let predicted = matches e p in
         let br2 = updateDigraph br seen predicted in
@@ -173,6 +190,9 @@ let synchronize
 
 (* cycle x is true iff x has a cycle. *)
 let cycle = DFS.has_cycle
+
+(* v_overlap v br s p = true iff u......TODO *)
+let v_overlap (v:graph) (br:digraph) (s:table) (p:table) = false (* TODO: Stub! *)
 
 (* Return a meaning, morph index, free-variation graph, blocking rule digraph,
  * seen-table, and predicted-table in response to the given hypothesis (lex, v, br)
