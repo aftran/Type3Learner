@@ -59,8 +59,6 @@ let matches (e:monomial) (t:table) =
         in
         Table.fold f t MSet.empty
 
-(* Graph type for the blocking rules: *)
-
 module IndexedMorph = struct
   type t = morph*int
   let compare = compare
@@ -68,11 +66,19 @@ module IndexedMorph = struct
   let equal = (=)
 end
 
-module G = Graph.Persistent.Digraph.Concrete(IndexedMorph)
+(* Blocking rules will be stored in a digraph: *)
+
+module DG = Graph.Persistent.Digraph.Concrete(IndexedMorph)
+
+type digraph = DG.t
+
+module DFS = Graph.Traverse.Dfs(DG)
+
+(* The free-variation pairs will be stored in an undirected graph: *)
+
+module G = Graph.Persistent.Graph.Concrete(IndexedMorph)
 
 type graph = G.t
-
-module DFS = Graph.Traverse.Dfs(G)
 
 (* Functions for updating lexicons: *)
 
@@ -131,44 +137,56 @@ let intersect (e:monomial) (ms:(int*monomial) list) (total:int) =
         | (i,h)::_ -> i, (FSet.inter h e)
         | [] -> total+1, e
 
-(* updateGraph br seen predicted = br with a new edge added for each pair in
- * the cartesion product seenXpredicted. *)
-let updateGraph (br:graph) (seen:MSet.t) (predicted:MSet.t) =
+(* updateDigraph br seen predicted = br with a new edge added for each pair in
+ * the cartesian product seen*predicted. *)
+let updateDigraph (br:digraph) (seen:MSet.t) (predicted:MSet.t) =
         let f m a =
-                let g n b = G.add_edge b m n in (* m blocks n now *)
+                let g n b = DG.add_edge b m n in (* m blocks n now *)
                 MSet.fold g predicted a
         in
         MSet.fold f seen br
 
+(* updateGraph fv seen = fv with a new edge added for each pair in the cartesian
+ * product seen*seen. *)
+let updateGraph (fv:graph) (seen:MSet.t) =
+        let f m a =
+                let g n b = G.add_edge b m n in (* m,n are in free variation now *)
+                MSet.fold g seen a
+        in
+        MSet.fold f seen fv
+(* Stupidly, this adds each edge twice, but that won't affect the end result. *)
 
-(* Return (a new 'seen' table, a new 'predicted' table, a new blocking graph) as
- * if we are adding (m -> i -> mean) to the lexicon. *)
+
+(* Return the tuple:
+ * (a new 'seen' table, a new 'predicted' table, a new free-variation graph, a
+ * new blocking digraph) as if we are adding (m -> i -> mean) to the lexicon. *)
 let synchronize
-        (s:table) (p:table) (br:graph) (m:morph) (i:int) (mn:monomial) (e:monomial)
+        (s:table) (p:table) (fv:graph)  (br:digraph) (m:morph) (i:int) (mn:monomial) (e:monomial)
 =
         let s2 = updateTable s e  (m,i) in
         let p2 = updateTable p mn (m,i) in
         (* We really should only do this next part if s2 or p2 have changed. *)
         let seen      = morphs  e s in
         let predicted = matches e p in
-        let br2 = updateGraph br seen predicted in
-        s2, p2, br2
+        let br2 = updateDigraph br seen predicted in
+        let fv2 = updateGraph fv seen in
+        s2, p2, fv2, br2
 
-(* overlap x is true iff x has a cycle. *)
-let overlap = DFS.has_cycle
+(* cycle x is true iff x has a cycle. *)
+let cycle = DFS.has_cycle
 
-(* Return a meaning, morph index, blocking rule graph, seen-table, and
- * predicted-table in response to the given hypothesis (lex, br) and the
- * witnessing of morph m in environment e. *)
+(* Return a meaning, morph index, free-variation graph, blocking rule digraph,
+ * seen-table, and predicted-table in response to the given hypothesis (lex, fv, br)
+ * and the witnessing of morph m in environment e. *)
 let rec getHypothesis
-        (lex:lexicon) (br:graph) (s:table) (p:table) (m:morph)
+        (lex:lexicon) (fv:graph) (br:digraph) (s:table) (p:table) (m:morph)
         (e:monomial) (ms:(int*monomial) list) (total:int)
 =
         let i, mean = intersect e ms total in
-        let s2, p2, br2 = synchronize s p br m i mean e in
-        if overlap br2 then
+        let s2, p2, fv2, br2 = synchronize s p fv br m i mean e in
+        if cycle br2 then
                 (* Start over without the head of ms *)
-                getHypothesis lex br s p m e (List.tl ms) total
+                getHypothesis lex fv br s p m e (List.tl ms) total
                 (* Question: what happens if everything in ms results in an
                  * overlap?
                  * Answer: No, once ms becomes empty, getHypothesis
@@ -176,7 +194,7 @@ let rec getHypothesis
                  * anything.
                  * Upshot: this recursion will be finite.*)
         else
-                mean, i, br2, s2, p2
+                mean, i, fv2, br2, s2, p2
 
 (* lexeme2list l = the list of (key,value) pairs in l, in no particular
  * order. *)
@@ -184,36 +202,39 @@ let lexeme2list l =
         let f k d a = (k,d)::a in
         IntMap.fold f l []
 
-(* Update the lexicon l, blocking rules b, and table t appropriately to account
- * for observing the morph m in environment (maximal monomial) e.  Returns a
- * triple: (the updated lexicon, the updated blocking rules, the updated table).
+(* Update the lexicon l, free-variation graph fv, blocking rules br, and table t
+ * appropriately to account for observing the morph m in environment (maximal
+ * monomial) e.  Returns a quadrouple: (the updated lexicon, the updated
+ * free-variation graph, the updated blocking rules, the updated table).
  *)
-let learn (lex:lexicon) (br:graph) (s:table) (p:table) (m:morph) (e:monomial) =
+let learn (lex:lexicon) (fv:graph) (br:digraph) (s:table) (p:table) (m:morph) (e:monomial) =
         let ms = meanings m lex in
         (* ms = the list of meanings for the homophones of m *)
         let ims = lexeme2list ms in (* indexized ms *)
         let sms = sortDissimTo e ims in
         (* sms = the list of meanings, sorted by similarity to e, paired with
          * their homophone indexes in the lexicon. *)
-        let mean, idx, br2, s2, p2 = getHypothesis lex br s p m e sms (List.length sms) in
+        let mean, idx, fv2, br2, s2, p2 =
+                getHypothesis lex fv br s p m e sms (List.length sms) in
         let lex2 = updateLex lex m idx mean in
-        lex2, br2, s2, p2
+        lex2, fv2, br2, s2, p2
 
 type text = (morph*monomial) list
 
-(* type3learn t = (lex, br, s, p), where:
+(* type3learn t = (lex, fv, br, s, p), where:
  *      lex is a lexicon,
- *      br is a graph of blocking rules,
+ *      fv is a graph of free-variation pairs,
+ *      br is a digraph of blocking rules,
  *      s is a table that maps monomials to sets of morphs mitnessed in the
  *      environment of the monomial,
  *      p is a table that maps monomials to sets of morphs predicted in
  *      environments that are supersets of that monomial.
- * lex and br together specify the hypothesis that Type3Learner has acquired
+ * lex, fv and br together specify the hypothesis that Type3Learner has acquired
  * given text t.  s and p contain no new information but improve the efficiency
  * of the learner. *)
 let type3learn (t:text) =
-        let f (lex, br, s, p) (m,e) = learn lex br s p m e in
-        List.fold_left f (Lexicon.empty, G.empty, Table.empty, Table.empty) t
+        let f (lex, fv, br, s, p) (m,e) = learn lex fv br s p m e in
+        List.fold_left f (Lexicon.empty, G.empty, DG.empty, Table.empty, Table.empty) t
 
 (* TESTS *)
 (* TODO: Move the tests to a different file. *)
@@ -247,11 +268,11 @@ let t = assert ([(2,m1); (1,m5); (3,m4)] = sortDissimTo e ms2)
 
 (* Test a first step in learning: *)
 let mn = monomial [("A","-"); ("B","-"); ("C","-")]
-let (lex, br, s, p) = learn
-                Lexicon.empty G.empty Table.empty Table.empty "hello" mn
+let (lex, fv, br, s, p) = learn
+                Lexicon.empty G.empty DG.empty Table.empty Table.empty "hello" mn
 let expectedLex = updateLex Lexicon.empty "hello" 1 mn
 let t = assert ( lex = expectedLex )
-let t = assert ( br = G.empty )
+let t = assert ( br = DG.empty )
 let expectedS = updateTable Table.empty mn ("hello",1)
 let t = assert ( s = expectedS )
 let expectedP = expectedS
