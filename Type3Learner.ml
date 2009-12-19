@@ -50,7 +50,7 @@ end)
  * indexes. *)
 type table = MSet.t Table.t
 
-(* matches t e = the union of all values of t whose key is a subset of e. *)
+(* matches e t = the union of all values of t whose key is a subset of e. *)
 let matches (e:monomial) (t:table) =
         let (<) x y = FSet.subset x y in
         let (+) x y = MSet.union x y in
