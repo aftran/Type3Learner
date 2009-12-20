@@ -89,9 +89,9 @@ type graph = G.t
 let meanings (m:morph) (l:lexicon) =
         try Lexicon.find m l with Not_found -> IntMap.empty
 
-(*  updateLex l m i mn = the lexicon l with the added meaning mn associated
+(*  update_lex l m i mn = the lexicon l with the added meaning mn associated
  *  with index i of morph m. *)
-let updateLex (l:lexicon) (m:morph) (i:int) (mn:monomial) =
+let update_lex (l:lexicon) (m:morph) (i:int) (mn:monomial) =
         let x = meanings m l in
         let newVal = IntMap.add i mn x in
         Lexicon.add m newVal l
@@ -103,9 +103,9 @@ let updateLex (l:lexicon) (m:morph) (i:int) (mn:monomial) =
 let morphs (e:monomial) (t:table) =
         try Table.find e t with Not_found-> MSet.empty
 
-(* updateTable t e m i = the table t with the added pair (m,i) in the set
+(* update_table t e m i = the table t with the added pair (m,i) in the set
  * associated with e. *)
-let updateTable (t:table) (e:monomial) (mi:morph*int) =
+let update_table (t:table) (e:monomial) (mi:morph*int) =
         let x = morphs e t in
         let newVal = MSet.add mi x in
         Table.add e newVal t
@@ -114,18 +114,18 @@ let updateTable (t:table) (e:monomial) (mi:morph*int) =
 let similarity s t = FSet.cardinal (FSet.inter s t)
 
 (* Compare function for sorting monomials by dissimilarity to e. *)
-let compareDissimTo e s t = compare (similarity e t) (similarity e s)
+let compare_dissim_to e s t = compare (similarity e t) (similarity e s)
  
-(* sortDissimTo e ms = ms sorted so that the monomials are in decreasing order
+(* sort_dissim_to e ms = ms sorted so that the monomials are in decreasing order
  * of similarity to e.  The integers paired with the monomials are ignored but
  * kept with the same monomials they were originally paired with.
  *
  * For a monomial*int list ms and environment (=maximal monomial) e,
- * sortDissimTo e [(m1,1); (m2,2); (m3,3), ...] =
+ * sort_dissim_to e [(m1,1); (m2,2); (m3,3), ...] =
  * [(mN(1),N(1)); (mN(2),N(2)); (mN(3),N(3)); ...],
  * where mN(1), mN(2), ... are in decreasing order of similarity to e. *)
-let sortDissimTo (e:monomial) (ms:(int*monomial) list) =
-        let f x y = compareDissimTo e (snd x) (snd y) in
+let sort_dissim_to (e:monomial) (ms:(int*monomial) list) =
+        let f x y = compare_dissim_to e (snd x) (snd y) in
         List.sort f ms
 
 (* With ms = [(4,m1); (9,m2); (1,m3); ...] (for example),
@@ -152,21 +152,18 @@ let new_block (br:digraph) (m:IndexedMorph.t) (n:IndexedMorph.t) =
         else
                 DG.add_edge br m n
 
-(* updateDigraph br seen predicted = br with a new edge added for each pair in
+(* update_blocking br seen predicted = br with a new edge added for each pair in
  * the cartesian product seen*predicted. *)
-let updateDigraph (br:digraph) (seen:MSet.t) (predicted:MSet.t) =
+let update_blocking (br:digraph) (seen:MSet.t) (predicted:MSet.t) =
         let f m a =
                 let g n b = new_block b m n in (* m blocks n now *)
                 MSet.fold g predicted a
         in
         MSet.fold f seen br
 
-(* updateGraph v seen = v with a new edge added for each pair in the cartesian
+(* update_free_variation v seen = v with a new edge added for each pair in the cartesian
  * product seen*seen. *)
-(* TODO: We could probably just make sure the elements are all reachable, then
- * take the transitive closure.  Since at the moment we're creating the
- * transitive closure anyway. *)
-let updateGraph (v:graph) (seen:MSet.t) =
+let update_free_variation (v:graph) (seen:MSet.t) =
         let f m a =
                 let g n b = G.add_edge b m n in (* m,n are in free variation now *)
                 MSet.fold g seen a
@@ -180,12 +177,12 @@ let updateGraph (v:graph) (seen:MSet.t) =
 let synchronize
         (s:table) (p:table) (v:graph)  (br:digraph) (m:morph) (i:int) (mn:monomial) (e:monomial)
 =
-        let s2 = updateTable s e  (m,i) in
-        let p2 = updateTable p mn (m,i) in
+        let s2 = update_table s e  (m,i) in
+        let p2 = update_table p mn (m,i) in
         let seen      = morphs  e s in
         let predicted = matches e p in
-        let br2 = updateDigraph br seen predicted in
-        let v2 = updateGraph v seen in
+        let br2 = update_blocking br seen predicted in
+        let v2 = update_free_variation v seen in
         s2, p2, v2, br2
 
 (* cycle x is true iff x has a cycle. *)
@@ -197,7 +194,7 @@ let v_overlap (v:graph) (br:digraph) (s:table) (p:table) = false (* TODO: Stub! 
 (* Return a meaning, morph index, free-variation graph, blocking rule digraph,
  * seen-table, and predicted-table in response to the given hypothesis (lex, v, br)
  * and the witnessing of morph m in environment e. *)
-let rec getHypothesis
+let rec get_hypothesis
         (lex:lexicon) (v:graph) (br:digraph) (s:table) (p:table) (m:morph)
         (e:monomial) (ms:(int*monomial) list) (total:int)
 =
@@ -205,10 +202,10 @@ let rec getHypothesis
         let s2, p2, v2, br2 = synchronize s p v br m i mean e in
         if cycle br2 then
                 (* Start over without the head of ms *)
-                getHypothesis lex v br s p m e (List.tl ms) total
+                get_hypothesis lex v br s p m e (List.tl ms) total
                 (* Question: what happens if everything in ms results in an
                  * overlap?
-                 * Answer: No, once ms becomes empty, getHypothesis
+                 * Answer: No, once ms becomes empty, get_hypothesis
                  * posits a new homophone of m, which will never overlap with
                  * anything.
                  * Upshot: this recursion will be finite.*)
@@ -230,12 +227,12 @@ let learn (lex:lexicon) (v:graph) (br:digraph) (s:table) (p:table) (m:morph) (e:
         let ms = meanings m lex in
         (* ms = the list of meanings for the homophones of m *)
         let ims = lexeme2list ms in (* indexized ms *)
-        let sms = sortDissimTo e ims in
+        let sms = sort_dissim_to e ims in
         (* sms = the list of meanings, sorted by similarity to e, paired with
          * their homophone indexes in the lexicon. *)
         let mean, idx, v2, br2, s2, p2 =
-                getHypothesis lex v br s p m e sms (List.length sms) in
-        let lex2 = updateLex lex m idx mean in
+                get_hypothesis lex v br s p m e sms (List.length sms) in
+        let lex2 = update_lex lex m idx mean in
         lex2, v2, br2, s2, p2
 
 type text = (morph*monomial) list
@@ -273,8 +270,8 @@ let t = assert (m6 = m7)
 
 let e = monomial [("A","+"); ("B","-"); ("C","+"); ("D","-"); ("E","-"); ("A","-")]
 
-let t = assert (compareDissimTo e m1 m3 = -(compare 2 2))
-let t = assert (compareDissimTo e m2 (monomial []) = -(compare 2 0))
+let t = assert (compare_dissim_to e m1 m3 = -(compare 2 2))
+let t = assert (compare_dissim_to e m2 (monomial []) = -(compare 2 0))
 
 let ms = [(1,m1); (2,m2); (3,m3); (4,m5); (5,m4); (6,m6); (7,m7)]
 
@@ -283,16 +280,16 @@ let t = assert (   i = (1, (FSet.inter e m1))   )
 let t = assert (   (1,e) = (intersect e [] 0)    )
 
 let ms2 = [(1,m5); (2,m1); (3,m4);]
-let t = assert ([(2,m1); (1,m5); (3,m4)] = sortDissimTo e ms2)
+let t = assert ([(2,m1); (1,m5); (3,m4)] = sort_dissim_to e ms2)
 
 (* Test a first step in learning: *)
 let mn = monomial [("A","-"); ("B","-"); ("C","-")]
 let (lex, v, br, s, p) = learn
                 Lexicon.empty G.empty DG.empty Table.empty Table.empty "hello" mn
-let expectedLex = updateLex Lexicon.empty "hello" 1 mn
+let expectedLex = update_lex Lexicon.empty "hello" 1 mn
 let t = assert ( lex = expectedLex )
 let t = assert ( br = DG.empty )
-let expectedS = updateTable Table.empty mn ("hello",1)
+let expectedS = update_table Table.empty mn ("hello",1)
 let t = assert ( s = expectedS )
 let expectedP = expectedS
 let t = assert ( p = expectedS )
