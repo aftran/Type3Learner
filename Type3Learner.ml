@@ -152,12 +152,15 @@ let new_block (br:digraph) (m:IndexedMorph.t) (n:IndexedMorph.t) =
         else
                 DG.add_edge br m n
 
-(* update_blocking br seen predicted = br with a new edge added for each pair in
- * the cartesian product seen*predicted. *)
-let update_blocking (br:digraph) (seen:MSet.t) (predicted:MSet.t) =
+(* update_blocking_row br seen predicted = br with a new edge added for each pair in
+ * the cartesian product seen*(predicted-seen).  This means creating a new
+ * blocking rule whenever a morph is predicted (but not seen) in the environment
+ * where another morph has been seen. *)
+let update_blocking_row (br:digraph) (seen:MSet.t) (predicted:MSet.t) =
+        let pNotSeen = MSet.diff predicted seen in
         let f m a =
                 let g n b = new_block b m n in (* m blocks n now *)
-                MSet.fold g predicted a
+                MSet.fold g pNotSeen a
         in
         MSet.fold f seen br
 
@@ -175,13 +178,14 @@ let update_free_variation (v:graph) (seen:MSet.t) =
  * (a new 'seen' table, a new 'predicted' table, a new free-variation graph, a
  * new blocking digraph) as if we are adding (m -> i -> mean) to the lexicon. *)
 let synchronize
-        (s:table) (p:table) (v:graph)  (br:digraph) (m:morph) (i:int) (mn:monomial) (e:monomial)
+        (s:table) (p:table) (v:graph) (br:digraph) (m:morph) (i:int) (mn:monomial) (e:monomial)
 =
         let s2 = update_table s e  (m,i) in
         let p2 = update_table p mn (m,i) in
         let seen      = morphs  e s in
         let predicted = matches e p in
-        let br2 = update_blocking br seen predicted in
+        let br2 = update_blocking_row br seen predicted in (* TODO: Wrong; need
+        to do this for all rows, not just one. *)
         let v2 = update_free_variation v seen in
         s2, p2, v2, br2
 
