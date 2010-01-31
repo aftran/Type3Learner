@@ -139,19 +139,6 @@ let intersect (e:monomial) (ms:(int*monomial) list) (total:int) =
         | (i,h)::_ -> i, (FSet.inter h e)
         | [] -> total+1, e
 
-(* new_block br m n =
- *       if m == n then
- *               br
- *       else
- *               br with a new edge from m to n.
- * In terms of Type3Learner, new_block br m n = the blocking rules in br with the
- * extra rule that m blocks n, except never let something block itself. *)
-let new_block (br:digraph) (m:IndexedMorph.t) (n:IndexedMorph.t) =
-        if m = n then
-                br
-        else
-                DG.add_edge br m n
-
 (* update_blocking_row br seen predicted = br with a new edge added for each pair in
  * the cartesian product seen*(predicted-seen).  This means creating a new
  * blocking rule whenever a morph is predicted (but not seen) in the environment
@@ -159,7 +146,7 @@ let new_block (br:digraph) (m:IndexedMorph.t) (n:IndexedMorph.t) =
 let update_blocking_row (br:digraph) (seen:MSet.t) (predicted:MSet.t) =
         let pNotSeen = MSet.diff predicted seen in
         let f m a =
-                let g n b = new_block b m n in (* m blocks n now *)
+                let g n b = DG.add_edge b m n in (* m blocks n now *)
                 MSet.fold g pNotSeen a
         in
         MSet.fold f seen br
