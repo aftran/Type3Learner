@@ -41,6 +41,9 @@ module MSet = Set.Make(struct
         let compare = compare
 end)
 
+(* morphXint_set x = an MSet containing the elements of list x *)
+let morphXint_set x = List.fold_right MSet.add x MSet.empty
+
 module Table = Map.Make(struct
         type t = monomial
         let compare = compare
@@ -49,6 +52,14 @@ end)
 (* A table is a map from monomials to sets of morphs with integer
  * indexes. *)
 type table = MSet.t Table.t
+
+(* table x = a new table based on the list x of type
+ * (monomial*((morph*int) list)).  The list is of ordered pairs that map a
+ * monomial to a list of morphs.  The new table maps those monomials to their
+ * respective lists of morphs.. *)
+let table (x:(monomial*((morph*int) list)) list) =
+        let f (k,v) a = Table.add k(morphXint_set v) a in
+        List.fold_right f x Table.empty
 
 (* In terms of Type3Learner, matches e t = the morphs predicted to appear in
  * environment e, according to table t.
