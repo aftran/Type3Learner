@@ -200,9 +200,13 @@ let synchronize
 (* cycle x is true iff x has a cycle. *)
 let cycle = DFS.has_cycle
 
-(* Return a meaning, morph index, free-variation graph, blocking rule digraph,
- * seen-table, and predicted-table in response to the given hypothesis (lex, v, br)
- * and the witnessing of morph m in environment e. *)
+(* Return a meaning, morph index, free-variation graph, blocking-rule digraph,
+ * seen table, and predicted table in response to the given hypothesis
+ * (lex, v, br) and the witnessing of morph m in environment e.  The input must
+ * also provide an indexed list of monomials attached to morph m in the lexicon,
+ * and the size of this list.
+ * TODO: Make an internal recursion function so the caller doesn't have to
+ * provide redundant data. *)
 let rec get_hypothesis
         (lex:lexicon) (v:graph) (br:digraph) (s:table) (p:table) (m:morph)
         (e:monomial) (ms:(int*monomial) list) (total:int)
