@@ -2,9 +2,6 @@ open Type3Learner
 
 (* ------- UTILITIES---------*)
 
-(* Construct a set of morph*int that contains the values in list x. *)
-let morphXint_set x = List.fold_right MSet.add x MSet.empty;;
-
 let printSet m = let rec printFeat = function
       |[] -> print_newline()
       |(feat,value)::t -> (print_string feat; print_string":"; print_string value; printFeat t) 
@@ -34,16 +31,21 @@ let text2 = [("y",m1);("y",m2);("y",m3);("x",m4)];;
 
 let type3learn_with_printing (t:text) =
         let f ((lex, v, br, s, p), step) (m,e) =
-                print_string "\nStep "; print_int step;
-                print_string ".  Right before reacting to ";
+                let (lex2, v2, br2, s2, p2), step2 = (learn lex v br s p m e), step+1 in
+                print_string "\nStep "; print_int step2;
+                print_string ".  Right after reacting to ";
                 print_string m; print_string " in "; printSet e;
                 print_string ", the lexicon is:\n";
-                printLexicon lex;
-                (learn lex v br s p m e), step+1
+                printLexicon lex2;
+                print_string "BR is ";
+                print_string (if DG.is_empty br2 then "empty\n" else "non-empty\n");
+                (lex2, v2, br2, s2, p2), step2
         in
         List.fold_left f ((Lexicon.empty, G.empty, DG.empty, Table.empty, Table.empty), 0) t;;
 
+print_string "Reacting to text1:\n"
 let (lex,var,br,t1,t2),steps = type3learn_with_printing text1;;
+print_string "\n\n";;
 print_string "lex from text1:\n";;
 printLexicon lex;;
 (* here's the output, which shows that either the overlap was not detected, or the lex was not updated properly
@@ -55,7 +57,9 @@ y1 -
 assert ( not (cycle br) );;  (*no cycles in the br*)
 
 
-let (lex2,var2,br2,t12,t22) = type3learn text2;;
+print_string "Reacting to text2:\n"
+let (lex2,var2,br2,t12,t22),steps2 = type3learn_with_printing text2;;
+print_string "\n\n";;
 print_string "\nlex from text2:\n";;
 printLexicon lex2;; 
 print_string "\n\n";;
@@ -65,7 +69,7 @@ x1 - A:-B:-
 y1 - 
 - : unit = ()
  However, BR is empty while it shouldn't be:*)
-DG.is_empty br2;;
+assert ( not ( DG.is_empty br2 ));;
 
 
 (*MC test*)
@@ -77,6 +81,32 @@ let correctBR = DG.add_edge DG.empty ("y",9) ("w",5);;
 assert ( not ( DG.is_empty myBR ) );;
 assert ( not ( DG.is_empty correctBR ) );;
 assert  ( myBR = correctBR );;
+
+let e1 = monomial [("A","+"); ("B","+")]
+let e2 = monomial [("A","-"); ("B","+")]
+let e3 = monomial [("A","+"); ("B","-")]
+let e4 = monomial [("A","-"); ("B","-")]
+let eA = monomial [("A","+")]
+
+let mySeenTable = table [
+        (e1, [("x",4)]);
+        (e2, [("x",4)]);
+        (e3, [("y",3); ("z",2)]);
+        (e4, [("y",3)]);
+]
+
+let myPredictedTable = table [
+        (eA, [("x",4)])
+]
+
+let myBR2 = compute_blocking mySeenTable myPredictedTable
+let tempBR2 = DG.add_edge DG.empty ("y",3) ("x",4)
+let correctBR2 = DG.add_edge tempBR2 ("z",2) ("x",4);;
+
+assert ( not ( DG.is_empty correctBR2 ) );;
+assert ( not ( DG.is_empty myBR2 ) );;
+assert ( myBR2 = correctBR2 );;
+
 
 let m1 = monomial [("A","+"); ("B","-")]
 let m2 = monomial [("B","-"); ("G","+"); ("A","-")]
