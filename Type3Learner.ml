@@ -217,12 +217,19 @@ module DG_Oper = Graph.Oper.P(DG)
 * Pertsova (2010)). *)
 let weird_overlap s2 p2 v br br2 = 
         let vPairs = edges v in
+        let allBr = DG_Oper.union br br2 in
         let suspects =
-                let pc = PathChecker.create (DG_Oper.union br br2) in
+                let pc = PathChecker.create allBr in
                 let f (x,y) = path_exists pc x y in
                 List.filter f vPairs
         in
-        false, br2 (* TODO: Stub.  Be sure to return a new br3, not br2! *)
+        let f (x,y) (b,gr) =
+                let isBad = has_predecessor br2 y in
+                let gr2 = if isBad then (remove_edge gr (x,y)) else gr in
+                b or isBad, gr2
+        in
+        let (hasOverlap, br3) = List.fold f suspect (false, br) in
+        hasOverlap, br3 (* TODO: Stub.  Be sure to return a new br3, not br2! *)
 
 (* Return a meaning, morph index, free-variation graph, blocking-rule digraph,
  * seen table, and predicted table in response to the given hypothesis
