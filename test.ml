@@ -54,7 +54,7 @@ x1 -
 y1 - 
 - : unit = ()
 *)
-assert ( not (cycle br) );;  (*no cycles in the br*)
+assert ( not (cycle_overlap br) );;  (*no cycles in the br*)
 
 
 print_string "Reacting to text2:\n"
