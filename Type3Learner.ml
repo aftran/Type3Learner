@@ -213,8 +213,13 @@ let path_exists pc x y = PathChecker.check_path pc x y
 
 module DG_Oper = Graph.Oper.P(DG)
 
+(* has_predecessor g y = true iff y has a predecessor in digraph g. *)
+let has_predecessor digraph vertex = (DG.in_degree digraph vertex > 0)
+
 (* Detect a more complex type of overlap (see line 6 of the Overlap function in
-* Pertsova (2010)). *)
+* Pertsova (2010)).  Returns a pair (hasOverlap, b) where hasOverlap = true iff
+* this complex type of overlap has been detected, and b is a new digraph
+* containing blocking rules. *)
 let weird_overlap s2 p2 v br br2 = 
         let vPairs = edges v in
         let allBr = DG_Oper.union br br2 in
@@ -225,11 +230,10 @@ let weird_overlap s2 p2 v br br2 =
         in
         let f (x,y) (b,gr) =
                 let isBad = has_predecessor br2 y in
-                let gr2 = if isBad then (remove_edge gr (x,y)) else gr in
+                let gr2 = if isBad then (DG.remove_edge gr x y) else gr in
                 b or isBad, gr2
         in
-        let (hasOverlap, br3) = List.fold f suspect (false, br) in
-        hasOverlap, br3 (* TODO: Stub.  Be sure to return a new br3, not br2! *)
+        List.fold_right f suspects (false, allBr)
 
 (* Return a meaning, morph index, free-variation graph, blocking-rule digraph,
  * seen table, and predicted table in response to the given hypothesis
