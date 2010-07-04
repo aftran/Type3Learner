@@ -6,13 +6,18 @@ module type Type3learner = sig
         type lexeme
         type miset
         type table
-        type text
+        type text = (morph*monomial) list
 
         module G : Graph.Sig.P
-        type graph
+        type graph = G.t
 
         module DG : Graph.Sig.P
-        type digraph
+        type digraph = DG.t
+
+        val empty_lexicon : lexicon
+        val empty_table   : table
+        val empty_graph   : graph
+        val empty_digraph : digraph
 
         val type3learn : text -> lexicon *
                                  graph   *
@@ -86,6 +91,8 @@ module Make(UserTypes : ParamTypes) : Type3learner
                 type t = morph
                 let compare = UserTypes.compare_morphs
         end)
+
+        let empty_lexicon = Lexicon.empty
 
         module MSet = Set.Make(struct
                 type t = morph*int
@@ -174,6 +181,8 @@ module Make(UserTypes : ParamTypes) : Type3learner
                 let compare = compare
         end)
 
+        let empty_table = Table.empty
+
         (* A table is a map from monomials to sets of morphs with integer
          * indexes. *)
         type table = MSet.t Table.t
@@ -208,6 +217,8 @@ module Make(UserTypes : ParamTypes) : Type3learner
 
         module DG = Graph.Persistent.Digraph.Concrete(IndexedMorph)
 
+        let empty_digraph = DG.empty
+
         type digraph = DG.t
 
         module DFS = Graph.Traverse.Dfs(DG)
@@ -215,6 +226,8 @@ module Make(UserTypes : ParamTypes) : Type3learner
         (* The free-variation pairs will be stored in an undirected graph: *)
 
         module G = Graph.Persistent.Graph.Concrete(IndexedMorph)
+
+        let empty_graph = G.empty
 
         type graph = G.t
 
