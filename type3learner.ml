@@ -36,7 +36,10 @@ module type ParamTypes = sig
         val morph2string : morph -> string
 end
 
-module Make(UserTypes : ParamTypes) : Type3learner = struct
+module Make(UserTypes : ParamTypes) : Type3learner
+        with type feature = UserTypes.feature
+        and  type morph   = UserTypes.morph
+= struct
 
         type morph   = UserTypes.morph
         type feature = UserTypes.feature
