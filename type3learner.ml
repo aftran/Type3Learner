@@ -98,8 +98,7 @@ module Make(UserTypes : ParamTypes) : Type3Learner = struct
 
         let print_feature = print_string <<< feature2string
 
-        let print_monomial =
-                List.iter (print_string " "; print_feature) <<< FSet.elements
+        let print_monomial = print_string <<< monomial2string
 
         (* lexeme2pairs l = the list of the (key,value) pairs in lexeme x.
          * TODO: Stop duplicating code between lexicon2pairs and lexeme2pairs. *)
