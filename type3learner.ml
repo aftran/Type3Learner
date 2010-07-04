@@ -6,8 +6,32 @@ module type Type3learner = sig
         type lexeme
         type miset
         type table
+        type text
+
+        module G : Graph.Sig.P
         type graph
+
+        module DG : Graph.Sig.P
         type digraph
+
+        val type3learn : text -> lexicon *
+                                 graph   *
+                                 digraph *
+                                 table   *
+                                 table
+
+        val learn      : lexicon  ->
+                         graph    ->
+                         digraph  ->
+                         table    ->
+                         table    ->
+                         morph    ->
+                         monomial -> lexicon *
+                                     graph   *
+                                     digraph *
+                                     table   *
+                                     table
+
 
         val list2monomial : feature list -> monomial
         val monomial2list : monomial     -> feature list
@@ -20,6 +44,7 @@ module type Type3learner = sig
         val monomial2string : monomial -> string
         val  lexicon2string : lexicon  -> string
 
+        val print_morph    : morph    -> unit
         val print_feature  : feature  -> unit
         val print_monomial : monomial -> unit
         val print_lexicon  : lexicon  -> unit
@@ -99,9 +124,9 @@ module Make(UserTypes : ParamTypes) : Type3learner
                         in
                         "{" ^ nakedResult ^ "}"
 
-        let print_feature = print_string <<< feature2string
-
+        let print_feature  = print_string <<< feature2string
         let print_monomial = print_string <<< monomial2string
+        let print_morph    = print_string <<< morph2string
 
         (* lexeme2pairs l = the list of the (key,value) pairs in lexeme x.
          * TODO: Stop duplicating code between lexicon2pairs and lexeme2pairs. *)
