@@ -25,6 +25,12 @@ module type Type3learner = sig
                                  table   *
                                  table
 
+        val type3learn_with_printing : text -> lexicon *
+                                               graph   *
+                                               digraph *
+                                               table   *
+                                               table
+
         val learn      : lexicon  ->
                          graph    ->
                          digraph  ->
@@ -439,5 +445,24 @@ module Make(UserTypes : ParamTypes) : Type3learner
         let type3learn (t:text) =
                 let f (lex, v, br, s, p) (m,e) = learn lex v br s p m e in
                 List.fold_left f (Lexicon.empty, G.empty, DG.empty, Table.empty, Table.empty) t
+
+        let type3learn_chatty (t:text) =
+                let f ((lex, v, br, s, p), step) (m,e) =
+                        let (lex2, v2, br2, s2, p2), step2 = (learn lex v br s p m e), step+1 in
+                        print_string "\nStep "; print_int step2;
+                        print_string ".  Right after reacting to ";
+                        print_morph m; print_string " in "; print_monomial e;
+                        print_string ", the lexicon is:\n";
+                        print_lexicon lex2;
+                        print_string "BR is ";
+                        print_string (if DG.is_empty br2 then "empty\n" else "non-empty\n");
+                        (lex2, v2, br2, s2, p2), step2
+                in
+                List.fold_left
+                        f
+                        ((empty_lexicon, empty_graph, empty_digraph, empty_table, empty_table), 0)
+                        t;;
+                
+        let type3learn_with_printing = (function (a,b) -> a) <<< type3learn_chatty
 
 end
