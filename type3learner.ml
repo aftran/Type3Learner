@@ -1,4 +1,4 @@
-module type Type3Learner = sig
+module type Type3learner = sig
         type feature
         type morph
         type monomial
@@ -36,7 +36,7 @@ module type ParamTypes = sig
         val morph2string : morph -> string
 end
 
-module Make(UserTypes : ParamTypes) : Type3Learner = struct
+module Make(UserTypes : ParamTypes) : Type3learner = struct
 
         type morph   = UserTypes.morph
         type feature = UserTypes.feature
@@ -158,7 +158,7 @@ module Make(UserTypes : ParamTypes) : Type3Learner = struct
                 let f (k,v) a = Table.add k(list2morphXint_set v) a in
                 List.fold_right f x Table.empty
 
-        (* In terms of Type3Learner, matches e t = the morphs predicted to appear in
+        (* In terms of Type3learner, matches e t = the morphs predicted to appear in
          * environment e, according to table t.
          * matches e t = the union of all values of t whose key is a subset of e. *)
         let matches (e:monomial) (t:table) =
@@ -204,7 +204,7 @@ module Make(UserTypes : ParamTypes) : Type3Learner = struct
                 let newVal = IntMap.add i mn x in
                 Lexicon.add m newVal l
 
-        (* In terms of Type3Learner, morphs e t = the morphs seen in environment e,
+        (* In terms of Type3learner, morphs e t = the morphs seen in environment e,
          * according to table t.
          * morphs e t = the MSet.t associated with monomial e in table t, if it exists,
          * otherwise the empty MSet.t. *)
@@ -391,7 +391,8 @@ module Make(UserTypes : ParamTypes) : Type3Learner = struct
          *      environment of the monomial,
          *      p is a table that maps monomials to sets of morphs predicted in
          *      environments that are supersets of that monomial.
-         * lex, v and br together specify the hypothesis that Type3Learner has acquired
+         *
+         * lex, v and br together specify the hypothesis that Type3learner has acquired
          * given text t.  s and p contain no new information but improve the efficiency
          * of the learner. *)
         let type3learn (t:text) =
