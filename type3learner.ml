@@ -183,11 +183,11 @@ module Make(UserTypes : ParamTypes) : Type3learner
         * graph g. *)
         let digraph2pairs = pairify_with DG.fold_edges
 
-        (* pretty_print inner outer list = a pretty-printed version of a list of
+        (* format_prettily inner outer list = a pretty-printed version of a list of
          * pairs of strings.  The two elements in each pair are concatenated
          * with inner between them, then each result is concatenated with outer
          * between them. *)
-        let pretty_print (inner:string) (outer:string) pairlist =
+        let format_prettily (inner:string) (outer:string) pairlist =
                 let pair2string (r,s) = r ^ inner ^ s in
                 let g a (r,s) = pair2string (r,s) ^ outer ^ a in
                 List.fold_left g "" pairlist
@@ -199,18 +199,18 @@ module Make(UserTypes : ParamTypes) : Type3learner
         let apply_into_pairlist f_a f_b = List.map (apply_into_pair f_a f_b)
         
         let lexeme2string =
-                pretty_print " -> " "\n\t" <<<
+                format_prettily " -> " "\n\t" <<<
                 apply_into_pairlist string_of_int monomial2string <<<
                 lexeme2pairs
 
         let lexicon2string =
-                pretty_print "\t" "\n" <<<
+                format_prettily "\t" "\n" <<<
                 apply_into_pairlist morph2string lexeme2string <<<
                 lexicon2pairs
 
         let digraph2string =
                 let vertex2string (m,i) = (morph2string m) ^ "_" ^ string_of_int i in
-                pretty_print " -> " "\n" <<<
+                format_prettily " -> " "\n" <<<
                 apply_into_pairlist vertex2string vertex2string <<<
                 digraph2pairs
 
