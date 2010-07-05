@@ -54,11 +54,13 @@ module type Type3learner = sig
         val    morph2string : morph    -> string
         val monomial2string : monomial -> string
         val  lexicon2string : lexicon  -> string
+        val  digraph2string : digraph  -> string
 
         val print_morph    : morph    -> unit
         val print_feature  : feature  -> unit
         val print_monomial : monomial -> unit
         val print_lexicon  : lexicon  -> unit
+        val print_digraph  : digraph  -> unit
 end
 
 module type ParamTypes = sig
@@ -121,6 +123,31 @@ module Make(UserTypes : ParamTypes) : Type3learner
         let feature2string = UserTypes.feature2string
         let morph2string   = UserTypes.morph2string
 
+        module IndexedMorph = struct
+          type t = morph*int
+          let compare = compare
+          let hash = Hashtbl.hash
+          let equal = (=)
+        end
+
+        (* Blocking rules will be stored in a digraph: *)
+
+        module DG = Graph.Persistent.Digraph.Concrete(IndexedMorph)
+
+        let empty_digraph = DG.empty
+
+        type digraph = DG.t
+
+        module DFS = Graph.Traverse.Dfs(DG)
+
+        (* The free-variation pairs will be stored in an undirected graph: *)
+
+        module G = Graph.Persistent.Graph.Concrete(IndexedMorph)
+
+        let empty_graph = G.empty
+
+        type graph = G.t
+
         (* Function composition as an infix operator.
          (<<<) : ('b -> 'c) -> ('a -> 'b) -> ('a -> 'c) *)
         let (<<<) f g x = f(g(x))
@@ -141,15 +168,20 @@ module Make(UserTypes : ParamTypes) : Type3learner
         let print_monomial = print_string <<< monomial2string
         let print_morph    = print_string <<< morph2string
 
-        (* lexeme2pairs l = the list of the (key,value) pairs in lexeme x.
-         * TODO: Stop duplicating code between lexicon2pairs and lexeme2pairs. *)
-        let lexeme2pairs x = let f k v a = (k,v)::a in
-                IntMap.fold f x []
+        (* Convert x into a list of pairs, given a fold function that takes a
+         * function that takes two elements at once as well as the accumulator. *)
+        let pairify_with fold x = let f k v a = (k,v)::a in
+                fold f x []
 
+        (* lexeme2pairs l = the list of the (key,value) pairs in lexeme x. *)
+        let lexeme2pairs  = pairify_with IntMap.fold
 
         (* lexicon2pairs l = the list of the (key,value) pairs in lexicon l. *)
-        let lexicon2pairs l = let f k v a = (k,v)::a in
-                Lexicon.fold f l []
+        let lexicon2pairs = pairify_with Lexicon.fold
+
+        (* digraph2pairs g = the list of the pairs that represent the edges in
+        * graph g. *)
+        let digraph2pairs = pairify_with DG.fold_edges
 
         (* pretty_print inner outer list = a pretty-printed version of a list of
          * pairs of strings.  The two elements in each pair are concatenated
@@ -167,17 +199,26 @@ module Make(UserTypes : ParamTypes) : Type3learner
         let apply_into_pairlist f_a f_b = List.map (apply_into_pair f_a f_b)
         
         let lexeme2string =
-                pretty_print " -> " "     \n" <<<
+                pretty_print " -> " "\n\t" <<<
                 apply_into_pairlist string_of_int monomial2string <<<
                 lexeme2pairs
 
         let lexicon2string =
-                pretty_print " :" "\n" <<<
+                pretty_print "\t" "\n" <<<
                 apply_into_pairlist morph2string lexeme2string <<<
                 lexicon2pairs
 
-        (* printing the lexicon *)
+        let digraph2string =
+                let vertex2string (m,i) = (morph2string m) ^ "_" ^ string_of_int i in
+                pretty_print " -> " ", \t" <<<
+                apply_into_pairlist vertex2string vertex2string <<<
+                digraph2pairs
+
+        (* Print a lexicon. *)
         let print_lexicon = print_string <<< lexicon2string
+
+        (* Print a blocking-rules graph. *)
+        let print_digraph = print_string <<< digraph2string
 
         (* list2morphXint_set x = an MSet containing the elements of list x *)
         let list2morphXint_set x = List.fold_right MSet.add x MSet.empty
@@ -211,31 +252,6 @@ module Make(UserTypes : ParamTypes) : Type3learner
                         if k < e then a + d else a
                 in
                 Table.fold f t MSet.empty
-
-        module IndexedMorph = struct
-          type t = morph*int
-          let compare = compare
-          let hash = Hashtbl.hash
-          let equal = (=)
-        end
-
-        (* Blocking rules will be stored in a digraph: *)
-
-        module DG = Graph.Persistent.Digraph.Concrete(IndexedMorph)
-
-        let empty_digraph = DG.empty
-
-        type digraph = DG.t
-
-        module DFS = Graph.Traverse.Dfs(DG)
-
-        (* The free-variation pairs will be stored in an undirected graph: *)
-
-        module G = Graph.Persistent.Graph.Concrete(IndexedMorph)
-
-        let empty_graph = G.empty
-
-        type graph = G.t
 
         (* Functions for updating a hypothesis: *)
 
@@ -454,8 +470,8 @@ module Make(UserTypes : ParamTypes) : Type3learner
                         print_morph m; print_string " in "; print_monomial e;
                         print_string ", the lexicon is:\n";
                         print_lexicon lex2;
-                        print_string "BR is ";
-                        print_string (if DG.is_empty br2 then "empty\n" else "non-empty\n");
+                        print_string "Blocking rules: \t";
+                        print_digraph br2;
                         (lex2, v2, br2, s2, p2), step2
                 in
                 List.fold_left
