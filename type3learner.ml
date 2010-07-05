@@ -157,7 +157,7 @@ module Make(UserTypes : ParamTypes) : Type3learner
          * between them. *)
         let pretty_print (inner:string) (outer:string) pairlist =
                 let pair2string (r,s) = r ^ inner ^ s in
-                let g a (r,s) = pair2string (r,s) ^ outer in
+                let g a (r,s) = pair2string (r,s) ^ outer ^ a in
                 List.fold_left g "" pairlist
 
         (* apply_into_pair f_a f_b (a,b) applies f_a and f_b to a and b,
