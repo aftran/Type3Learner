@@ -210,7 +210,7 @@ module Make(UserTypes : ParamTypes) : Type3learner
 
         let digraph2string =
                 let vertex2string (m,i) = (morph2string m) ^ "_" ^ string_of_int i in
-                pretty_print " -> " ", \t" <<<
+                pretty_print " -> " "\n" <<<
                 apply_into_pairlist vertex2string vertex2string <<<
                 digraph2pairs
 
@@ -470,8 +470,9 @@ module Make(UserTypes : ParamTypes) : Type3learner
                         print_morph m; print_string " in "; print_monomial e;
                         print_string ", the lexicon is:\n";
                         print_lexicon lex2;
-                        print_string "Blocking rules: \t";
+                        print_string "Blocking rules: \n";
                         print_digraph br2;
+                        print_string "\n";
                         (lex2, v2, br2, s2, p2), step2
                 in
                 List.fold_left
