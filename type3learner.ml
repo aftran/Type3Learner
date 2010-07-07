@@ -1,11 +1,11 @@
-module type Type3learner = sig
-        type feature
+module type T = sig
         type morph
+        type feature
         type monomial
-        type lexicon
         type lexeme
-        type miset
+        type lexicon
         type table
+        type miset
         type text = (morph*monomial) list
 
         module G : Graph.Sig.P
@@ -13,11 +13,6 @@ module type Type3learner = sig
 
         module DG : Graph.Sig.P
         type digraph = DG.t
-
-        val empty_lexicon : lexicon
-        val empty_table   : table
-        val empty_graph   : graph
-        val empty_digraph : digraph
 
         val type3learn : text -> lexicon *
                                  graph   *
@@ -31,21 +26,10 @@ module type Type3learner = sig
                                                table   *
                                                table
 
-        val learn      : lexicon  ->
-                         graph    ->
-                         digraph  ->
-                         table    ->
-                         table    ->
-                         morph    ->
-                         monomial -> lexicon *
-                                     graph   *
-                                     digraph *
-                                     table   *
-                                     table
-
-
-        val list2monomial : feature list -> monomial
         val monomial2list : monomial     -> feature list
+        val list2monomial : feature list -> monomial
+
+        val list2table : (monomial*((morph*int) list)) list -> table
 
         (* Useful for constructing tables. *)
         val list2morphXint_set : (morph*int) list -> miset
@@ -61,6 +45,24 @@ module type Type3learner = sig
         val print_monomial : monomial -> unit
         val print_lexicon  : lexicon  -> unit
         val print_digraph  : digraph  -> unit
+
+        val empty_lexicon : lexicon
+        val empty_table   : table
+        val empty_graph   : graph
+        val empty_digraph : digraph
+
+        val learn      : lexicon  ->
+                         graph    ->
+                         digraph  ->
+                         table    ->
+                         table    ->
+                         morph    ->
+                         monomial -> lexicon *
+                                     graph   *
+                                     digraph *
+                                     table   *
+                                     table
+
 end
 
 module type ParamTypes = sig
@@ -68,13 +70,13 @@ module type ParamTypes = sig
         type morph
 
         val compare_features : feature -> feature -> int
-        val compare_morphs : morph -> morph -> int
+        val compare_morphs   : morph   -> morph   -> int
 
         val feature2string : feature -> string
-        val morph2string : morph -> string
+        val   morph2string : morph   -> string
 end
 
-module Make(UserTypes : ParamTypes) : Type3learner
+module Make(UserTypes : ParamTypes) : T
         with type feature = UserTypes.feature
         and  type morph   = UserTypes.morph
 = struct
@@ -238,7 +240,7 @@ module Make(UserTypes : ParamTypes) : Type3learner
          * (monomial*((morph*int) list)).  The list is of ordered pairs that map a
          * monomial to a list of morphs.  The new table maps those monomials to their
          * respective lists of morphs.. *)
-        let table (x:(monomial*((morph*int) list)) list) =
+        let list2table (x:(monomial*((morph*int) list)) list) =
                 let f (k,v) a = Table.add k(list2morphXint_set v) a in
                 List.fold_right f x Table.empty
 
