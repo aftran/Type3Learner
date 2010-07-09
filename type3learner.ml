@@ -376,7 +376,9 @@ module Make(UserTypes : ParamTypes) : T
         module DG_Oper = Graph.Oper.P(DG)
 
         (* has_predecessor g y = true iff y has a predecessor in digraph g. *)
-        let has_predecessor digraph vertex = (DG.in_degree digraph vertex > 0)
+        let has_predecessor digraph vertex = try
+                0 < DG.in_degree digraph vertex
+        with Invalid_argument _ -> false
 
         (* Detect a more complex type of overlap (see line 6 of the Overlap function in
         * Pertsova (2010)).  Returns a pair (hasOverlap, b) where hasOverlap = true iff
