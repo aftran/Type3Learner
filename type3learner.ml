@@ -351,14 +351,14 @@ module Make(UserTypes : ParamTypes) : T
                 in
                 Table.fold f s DG.empty
 
-        (* compute_free_variation v seen = v with a new edge added for each pair in the cartesian
+        (* update_free_variation v seen = v with a new edge added for each pair in the cartesian
          * product seen*seen. *)
-        let compute_free_variation (seen:MSet.t) =
+        let update_free_variation (v:graph) (seen:MSet.t) =
                 let f m a =
                         let g n b = G.add_edge b m n in (* m,n are in free variation now *)
                         MSet.fold g seen a
                 in
-                MSet.fold f seen G.empty
+                MSet.fold f seen v
         (* Stupidly, this adds each edge twice, but that won't affect the end result. *)
 
         (* Return the tuple:
@@ -371,7 +371,7 @@ module Make(UserTypes : ParamTypes) : T
                 let p2 = update_table p mn (m,i) in
                 let seen = morphs  e s in
                 let br2 = compute_blocking s2 p2 in
-                let v2 = compute_free_variation seen in
+                let v2 = update_free_variation v seen in
                 s2, p2, v2, br2
 
         (* cycle x is true iff x has a cycle. *)
