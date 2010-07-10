@@ -432,7 +432,7 @@ module Make(UserTypes : ParamTypes) : T
         =
                 let i, mean = intersect e ms total in
                 let s2, p2, v2, br2 = synchronize s p v br m i mean e in
-                let hasWOverlap, br3 = weird_overlap s2 p2 v br br2 in
+                let hasWOverlap, br3 = weird_overlap s2 p2 v2 br br2 in
                 if (cycle_overlap br2) or hasWOverlap then
                         (* Start over without the head of ms *)
                         get_hypothesis lex v br s p m e (List.tl ms) total
