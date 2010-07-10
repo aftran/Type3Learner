@@ -355,7 +355,12 @@ module Make(UserTypes : ParamTypes) : T
          * product seen*seen. *)
         let update_free_variation (v:graph) (seen:MSet.t) =
                 let f m a =
-                        let g n b = G.add_edge b m n in (* m,n are in free variation now *)
+                        let g n b =
+                                if m == n then
+                                        b (* Don't add self-loop edges. *)
+                                else
+                                        G.add_edge b m n
+                        in
                         MSet.fold g seen a
                 in
                 MSet.fold f seen v
