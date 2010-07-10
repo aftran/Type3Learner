@@ -53,17 +53,17 @@ module type T = sig
         val empty_graph   : graph
         val empty_digraph : digraph
 
-        val learn      : lexicon  ->
-                         graph    ->
-                         digraph  ->
-                         table    ->
-                         table    ->
-                         morph    ->
-                         monomial -> lexicon *
-                                     graph   *
-                                     digraph *
-                                     table   *
-                                     table
+        val learn : lexicon  ->
+                    graph    ->
+                    digraph  ->
+                    table    ->
+                    table    ->
+                    morph    ->
+                    monomial -> lexicon *
+                                graph   *
+                                digraph *
+                                table   *
+                                table
 
 end
 
