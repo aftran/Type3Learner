@@ -23,17 +23,9 @@ module type T = sig
         (** A set of indexed morphs ((morph, int) pairs).  *)
         type miset
 
-
         (** A list of (morph, monomial) pairs.  Type3learner's job is to produce
          * a hypothesis that explains the elements of any text. *)
         type text = (morph*monomial) list
-
-        (** The module for the free-variation graphs. *)
-        module G : Graph.Sig.P
-
-        (** An undirected graph for representing morph*ints that are in free
-         * variation with each other somewhere. *)
-        type graph = G.t
 
         (** The module for the blocking-rule digraphs. *)
         module DG : Graph.Sig.P
@@ -41,6 +33,13 @@ module type T = sig
         (** A directed graph for representing the blocking rules between
          * morph*ints. *)
         type digraph = DG.t
+
+        (** The module for the free-variation graphs. *)
+        module G : Graph.Sig.P
+
+        (** An undirected graph for representing morph*ints that are in free
+         * variation with each other somewhere. *)
+        type graph = G.t
 
         (** type3learn t = (lex, v, br, s, p), where:
          *      lex is a lexicon,
@@ -100,6 +99,9 @@ module type T = sig
         (** Convert a digraph into a human-readable string. *)
         val  digraph2string : digraph  -> string
 
+        (** Convert a graph into a human-readable string. *)
+        val  graph2string   : graph    -> string
+
         (** Print the human-readable string representation of a morph. *)
         val print_morph    : morph    -> unit
 
@@ -114,6 +116,9 @@ module type T = sig
 
         (** Print the human-readable string representation of a digraph. *)
         val print_digraph  : digraph  -> unit
+
+        (** Print the human-readable string representation of a graph. *)
+        val print_graph    : graph    -> unit
         
         (** The empty lexicon. *)
         val empty_lexicon : lexicon

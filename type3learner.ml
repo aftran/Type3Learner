@@ -8,11 +8,11 @@ module type T = sig
         type miset
         type text = (morph*monomial) list
 
-        module G : Graph.Sig.P
-        type graph = G.t
-
         module DG : Graph.Sig.P
         type digraph = DG.t
+
+        module G : Graph.Sig.P
+        type graph = G.t
 
         val type3learn : text -> lexicon *
                                  graph   *
@@ -39,12 +39,14 @@ module type T = sig
         val monomial2string : monomial -> string
         val  lexicon2string : lexicon  -> string
         val  digraph2string : digraph  -> string
+        val  graph2string   : graph    -> string
 
         val print_morph    : morph    -> unit
         val print_feature  : feature  -> unit
         val print_monomial : monomial -> unit
         val print_lexicon  : lexicon  -> unit
         val print_digraph  : digraph  -> unit
+        val print_graph    : graph    -> unit
 
         val empty_lexicon : lexicon
         val empty_table   : table
@@ -182,8 +184,12 @@ module Make(UserTypes : ParamTypes) : T
         let lexicon2pairs = pairify_with Lexicon.fold
 
         (* digraph2pairs g = the list of the pairs that represent the edges in
-        * graph g. *)
+        * digraph g. *)
         let digraph2pairs = pairify_with DG.fold_edges
+
+        (* graph2pairs g = the list of the pairs that represent the edges in
+        * graph g. *)
+        let graph2pairs   = pairify_with G.fold_edges
 
         (* format_prettily inner outer list = a pretty-printed version of a list of
          * pairs of strings.  The two elements in each pair are concatenated
@@ -210,17 +216,26 @@ module Make(UserTypes : ParamTypes) : T
                 apply_into_pairlist morph2string lexeme2string <<<
                 lexicon2pairs
 
+        let vertex2string (m,i) = (morph2string m) ^ "_" ^ string_of_int i
+
         let digraph2string =
-                let vertex2string (m,i) = (morph2string m) ^ "_" ^ string_of_int i in
                 format_prettily " -> " "\n" <<<
                 apply_into_pairlist vertex2string vertex2string <<<
                 digraph2pairs
+
+        let graph2string =
+                format_prettily " and " "\n" <<<
+                apply_into_pairlist vertex2string vertex2string <<<
+                graph2pairs
 
         (* Print a lexicon. *)
         let print_lexicon = print_string <<< lexicon2string
 
         (* Print a blocking-rules graph. *)
         let print_digraph = print_string <<< digraph2string
+
+        (* Print a free-variation graph. *)
+        let print_graph = print_string <<< graph2string
 
         (* list2morphXint_set x = an MSet containing the elements of list x *)
         let list2morphXint_set x = List.fold_right MSet.add x MSet.empty
@@ -476,6 +491,9 @@ module Make(UserTypes : ParamTypes) : T
                         print_lexicon lex2;
                         print_string "Blocking rules: \n";
                         print_digraph br2;
+                        print_string "\n";
+                        print_string "Pairs of morphs that are in free variation in at least one environment:\n";
+                        print_graph v2;
                         print_string "\n";
                         (lex2, v2, br2, s2, p2), step2
                 in
