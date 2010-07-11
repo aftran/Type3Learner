@@ -38,6 +38,7 @@ module type T = sig
         val    morph2string : morph    -> string
         val monomial2string : monomial -> string
         val  lexicon2string : lexicon  -> string
+        val  table2string   : table    -> string
         val  digraph2string : digraph  -> string
         val  graph2string   : graph    -> string
 
@@ -45,6 +46,7 @@ module type T = sig
         val print_feature  : feature  -> unit
         val print_monomial : monomial -> unit
         val print_lexicon  : lexicon  -> unit
+        val print_table    : table    -> unit
         val print_digraph  : digraph  -> unit
         val print_graph    : graph    -> unit
 
@@ -152,6 +154,17 @@ module Make(UserTypes : ParamTypes) : T
 
         type graph = G.t
 
+        module Table = Map.Make(struct
+                type t = monomial
+                let compare = compare
+        end)
+
+        let empty_table = Table.empty
+
+        (* A table is a map from monomials to sets of morphs with integer
+         * indexes. *)
+        type table = MSet.t Table.t
+
         (* Function composition as an infix operator.
          (<<<) : ('b -> 'c) -> ('a -> 'b) -> ('a -> 'c) *)
         let (<<<) f g x = f(g(x))
@@ -183,6 +196,9 @@ module Make(UserTypes : ParamTypes) : T
         (* lexicon2pairs l = the list of the (key,value) pairs in lexicon l. *)
         let lexicon2pairs = pairify_with Lexicon.fold
 
+        (* table2pairs l = the list of the (key,value) pairs in table l. *)
+        let table2pairs   = pairify_with Table.fold
+
         (* digraph2pairs g = the list of the pairs that represent the edges in
         * digraph g. *)
         let digraph2pairs = pairify_with DG.fold_edges
@@ -206,6 +222,21 @@ module Make(UserTypes : ParamTypes) : T
 
         let apply_into_pairlist f_a f_b = List.map (apply_into_pair f_a f_b)
         
+
+
+        (* For debugging: *)
+        let mi2string (m,i)  = morph2string m ^ "_" ^ string_of_int i
+
+        let milist2string    =
+                format_prettily "_" " " <<<
+                apply_into_pairlist morph2string string_of_int
+
+        let miset2string     = milist2string <<< MSet.elements
+
+        let print_milist     = print_string  <<< milist2string
+
+
+
         let lexeme2string =
                 format_prettily " -> " "\n\t" <<<
                 apply_into_pairlist string_of_int monomial2string <<<
@@ -215,6 +246,11 @@ module Make(UserTypes : ParamTypes) : T
                 format_prettily "\t" "\n" <<<
                 apply_into_pairlist morph2string lexeme2string <<<
                 lexicon2pairs
+
+        let table2string =
+                format_prettily "\t" "\n" <<<
+                apply_into_pairlist monomial2string miset2string <<<
+                table2pairs
 
         let vertex2string (m,i) = (morph2string m) ^ "_" ^ string_of_int i
 
@@ -231,6 +267,9 @@ module Make(UserTypes : ParamTypes) : T
         (* Print a lexicon. *)
         let print_lexicon = print_string <<< lexicon2string
 
+        (* Print a table. *)
+        let print_table   = print_string <<< table2string
+
         (* Print a blocking-rules graph. *)
         let print_digraph = print_string <<< digraph2string
 
@@ -239,17 +278,6 @@ module Make(UserTypes : ParamTypes) : T
 
         (* list2morphXint_set x = an MSet containing the elements of list x *)
         let list2morphXint_set x = List.fold_right MSet.add x MSet.empty
-
-        module Table = Map.Make(struct
-                type t = monomial
-                let compare = compare
-        end)
-
-        let empty_table = Table.empty
-
-        (* A table is a map from monomials to sets of morphs with integer
-         * indexes. *)
-        type table = MSet.t Table.t
 
         (* table x = a new table based on the list x of type
          * (monomial*((morph*int) list)).  The list is of ordered pairs that map a

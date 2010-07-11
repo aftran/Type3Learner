@@ -96,6 +96,9 @@ module type T = sig
         (** Convert a lexicon into a human-readable string. *)
         val  lexicon2string : lexicon  -> string
 
+        (** Convert a table into a human-readable string. *)
+        val  table2string   : table    -> string
+
         (** Convert a digraph into a human-readable string. *)
         val  digraph2string : digraph  -> string
 
@@ -113,6 +116,9 @@ module type T = sig
 
         (** Print the human-readable string representation of a lexicon. *)
         val print_lexicon  : lexicon  -> unit
+
+        (** Print the numan-readable string representation of a table. *)
+        val print_table    : table    -> unit
 
         (** Print the human-readable string representation of a digraph. *)
         val print_digraph  : digraph  -> unit
