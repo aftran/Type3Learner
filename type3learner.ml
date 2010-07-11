@@ -551,6 +551,6 @@ module Make(UserTypes : ParamTypes) : T
                         ((empty_lexicon, empty_graph, empty_digraph, empty_table, empty_table), 0)
                         t;;
                 
-        let type3learn_with_printing = (function (a,b) -> a) <<< type3learn_chatty
+        let type3learn_with_printing = fst <<< type3learn_chatty
 
 end
