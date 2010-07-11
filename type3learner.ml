@@ -402,7 +402,7 @@ module Make(UserTypes : ParamTypes) : T
         =
                 let s2 = update_table s e  (m,i) in
                 let p2 = update_table p mn (m,i) in
-                let seen = morphs  e s in
+                let seen = morphs  e s2 in
                 let br2 = compute_blocking s2 p2 in
                 let v2 = update_free_variation v seen in
                 s2, p2, v2, br2
