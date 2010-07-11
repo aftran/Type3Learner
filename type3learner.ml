@@ -418,10 +418,22 @@ module Make(UserTypes : ParamTypes) : T
 
         module PathChecker = Graph.Path.Check(DG)
 
-        (* path_exists g x y =  true iff there is a path from x to y in the digraph g. *)
-        let path_exists pc x y = PathChecker.check_path pc x y
-
         module DG_Oper = Graph.Oper.P(DG)
+
+        (* path_exists pc x y =  true iff there is a path from x to y in the
+         * path-checker pc.
+         * SEVERE: This function does not actually work, due to what seems to
+         * be a bug in ocamlgraph.  For now, use edge_exists and
+         * DG_Oper.transitive_closure instead. *)
+        let path_exists_pc pc x y = PathChecker.check_path pc x y
+
+        (* edge_exists g x y = true iff there is an edge directly from x to
+         * y in the digraph g. *)
+        let edge_exists g x y  =
+                try
+                        DG.find_edge g x y;
+                        true
+                with Not_found -> false
 
         (* has_predecessor g y = true iff y has a predecessor in digraph g. *)
         let has_predecessor digraph vertex = try
@@ -435,9 +447,9 @@ module Make(UserTypes : ParamTypes) : T
         let weird_overlap s2 p2 v br br2 = 
                 let vPairs = edges v in
                 let allBr = DG_Oper.union br br2 in
+                let allBrTc = DG_Oper.transitive_closure allBr in
                 let suspects =
-                        let pc = PathChecker.create allBr in
-                        let f (x,y) = path_exists pc x y in
+                        let f (x,y) = edge_exists allBrTc x y in
                         List.filter f vPairs
                 in
                 let f (x,y) (b,gr) =
