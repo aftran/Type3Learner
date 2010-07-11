@@ -379,19 +379,23 @@ module Make(UserTypes : ParamTypes) : T
                 in
                 Table.fold f s DG.empty
 
-        (* update_free_variation v seen = v with a new edge added for each pair in the cartesian
-         * product seen*seen. *)
-        let update_free_variation (v:graph) (seen:MSet.t) =
-                let f m a =
-                        let g n b =
-                                if m == n then
-                                        b (* Don't add self-loop edges. *)
-                                else
-                                        G.add_edge b m n
-                        in
-                        MSet.fold g seen a
+        (* cross_lists r s = the cartesian product of the elements of lists r
+         * and s. *)
+        let cross_lists (r:'a list) (s:'b list) =
+                let f a m =
+                        let g b n = (m,n)::b in
+                        List.fold_left g a s
                 in
-                MSet.fold f seen v
+                List.fold_left f [] r
+
+        (* update_free_variation v seen = v with a new edge added for each pair in the cartesian
+         * product seen*seen, except for the pairs of the form (a,a). *)
+        let update_free_variation (v:graph) (seen:MSet.t) =
+                let es = MSet.elements seen in
+                let pairs = cross_lists es es in
+                let uPairs = List.filter (function (x,y) -> not (x = y)) pairs in
+                let f grph (x,y) = G.add_edge grph x y in
+                List.fold_left f v uPairs
         (* Stupidly, this adds each edge twice, but that won't affect the end result. *)
 
         (* Return the tuple:
