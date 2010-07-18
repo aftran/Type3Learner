@@ -458,7 +458,7 @@ module Make(UserTypes : ParamTypes) : T
                 in
                 let f (x,y) (b,gr) =
                         let isBad = has_predecessor br2 y in
-                        let gr2 = if not isBad then (DG.remove_edge gr x y) else gr in
+                        let gr2 = if not isBad then (DG.remove_edge gr x y) else empty_digraph in
                         b or isBad, gr2
                 in
                 List.fold_right f suspects (false, allBr)
