@@ -457,7 +457,8 @@ module Make(UserTypes : ParamTypes) : T
                         List.filter f vPairs
                 in
                 let f (x,y) (b,gr) =
-                        let isBad = has_predecessor br2 y in
+                        let grTc = DG_Oper.transitive_closure gr in
+                        let isBad = edge_exists grTc x y in
                         let gr2 = if not isBad then (DG.remove_edge gr x y) else empty_digraph in
                         b or isBad, gr2
                 in
