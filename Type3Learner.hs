@@ -2,6 +2,7 @@ module Type3Learner where
 
 import qualified Data.Set as S
 import qualified Data.Map as M
+import Data.Maybe
 
 type Monomial f = S.Set f
 
@@ -32,8 +33,7 @@ matches e = S.unions . M.elems . M.filterWithKey p
 -- monomial (meaning) associated with the index of the morph.
 addToLexicon :: (Ord w) => Lexicon w f -> w -> Int -> Monomial f -> Lexicon w f
 addToLexicon lex morph index monomial = M.alter f morph lex
-  where f Nothing  = Just $ M.singleton index monomial
-        f (Just l) = Just $ M.insert index monomial l
+  where f = Just . fromMaybe (M.singleton index monomial) 
 
 emptyLexicon :: Lexicon w f
 emptyLexicon = M.empty
