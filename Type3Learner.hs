@@ -33,7 +33,13 @@ matches e = S.unions . M.elems . M.filterWithKey p
 -- monomial (meaning) associated with the index of the morph.
 addToLexicon :: (Ord w) => Lexicon w f -> w -> Int -> Monomial f -> Lexicon w f
 addToLexicon lex morph index monomial = M.alter f morph lex
-  where f = Just . fromMaybe (M.singleton index monomial) 
+  where f = Just . fromMaybe (M.singleton index monomial)
 
 emptyLexicon :: Lexicon w f
 emptyLexicon = M.empty
+
+-- addToTable tbl monomial morph index = the table with (Mi morph index) added
+-- to the set associated with monomial.
+addToTable :: (Ord f) => Table w f -> Monomial f -> w -> Int -> Table w f
+addToTable tbl monomial morph index = M.alter f monomial tbl
+  where f = Just . fromMaybe (S.singleton $ Mi morph index)
