@@ -26,8 +26,8 @@ type Table w f = M.Map (Monomial f) (S.Set (Mi w))
 -- environment e, according to table t.
 -- matches e t = the union of all values of t whose key is a subset of e.
 matches :: (Ord f, Ord w) => Monomial f -> Table w f -> S.Set (Mi w)
-matches e = S.unions . M.elems . M.filterWithKey p
-  where p k _ = e `S.isSubsetOf` k
+matches e = S.unions . M.elems . M.filterWithKey f
+  where f k _ = e `S.isSubsetOf` k
 
 -- addToLexicon lexicon morph index monomial = the lexicon with the added
 -- monomial (meaning) associated with the index of the morph.
