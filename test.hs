@@ -1,4 +1,5 @@
 import Type3Learner
+import GraphA
 
 
 data Feature = Bright | Dim
@@ -20,6 +21,14 @@ tables = do
     print t2
     print t3
 
+g  = empty :: GraphA (Mi String)
+g2 = insEdge (Mi "hi" 1) (Mi "woof" 2) g
+
+graphs = do
+    print g
+    print g2
+
 main = do
     lexicons
     tables
+    graphs
