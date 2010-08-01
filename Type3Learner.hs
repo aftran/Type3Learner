@@ -82,5 +82,5 @@ computeBlocking seen predicted = M.foldWithKey f GraphA.empty seen
 updateBlockingRow :: (Ord w) => S.Set (Mi w) -> S.Set (Mi w) -> GraphA (Mi w) -> GraphA (Mi w)
 updateBlockingRow s p br = foldr f br pairs
   where pairs     = s `times` (p `S.difference` s)
-        f (x,y)   = insEdge x y
+        f (x,y)   = addEdge x y
         times a b = [(d,e) | d <- S.toList a, e <- S.toList b]

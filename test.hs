@@ -22,13 +22,22 @@ tables = do
     print t3
 
 g  = empty :: GraphA (Mi String)
-g2 = insEdge (Mi "hi" 1) (Mi "woof" 2) g
+g2 = addEdge (Mi "hi" 1) (Mi "woof" 2) g
+-- Make sure it's harmless to re-add nodes -- it risks causing a Node Exception:
+g3 = addEdge (Mi "hi" 1) (Mi "woof" 2) g2
 
 graphs = do
     print g
     print g2
 
+mySeen      = addToTable t3   (monomialFromList [Bright]) "BLOCKER" 1
+myPredicted = addToTable mySeen (monomialFromList [Bright]) "BLOCKEE" 1
+br = computeBlocking mySeen myPredicted
+
+blockingRules = print br
+
 main = do
     lexicons
     tables
     graphs
+    blockingRules
