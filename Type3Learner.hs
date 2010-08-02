@@ -49,8 +49,13 @@ addToTable tbl monomial morph idx = M.alter f monomial tbl
         f = Just . fromMaybe (S.singleton m) . (fmap $ S.insert m)
 
 -- similarity s t = the cardinality of s intersected with t.
-similarity :: (Ord f) => (Monomial f) -> (Monomial f) -> Int
+similarity :: (Ord f) => S.Set f -> S.Set f -> Int
 similarity s t = S.size $ S.intersection s t
+
+-- Produce a compare function for sorting Monomals by DISsimilatiry to the
+-- given Monomial.
+compareDissimTo :: (Ord f) => Monomial f -> Monomial f -> Monomial f -> Ordering
+compareDissimTo e m1 m2 = compare (similarity e m2) (similarity e m1)
 
 data State w f br = State { lexicon    :: Lexicon w f
                           , blocking   :: br

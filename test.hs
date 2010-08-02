@@ -5,16 +5,19 @@ import GraphA
 data Feature = Bright | Dim
      deriving (Show, Eq, Ord)
 
-l2 = addToLexicon emptyLexicon "hi" 1 (monomialFromList [Dim])
-l3 = addToLexicon l2 "hi" 2 (monomialFromList [Bright])
+dim    = monomialFromList [Dim]
+bright = monomialFromList [Bright]
+
+l2 = addToLexicon emptyLexicon "hi" 1 (dim)
+l3 = addToLexicon l2 "hi" 2 (bright)
 
 lexicons = do
     print l2
     print l3
 
-t  = addToTable emptyTable (monomialFromList [Dim]) "hi" 4
-t2 = addToTable t  (monomialFromList [Bright]) "woof" 2
-t3 = addToTable t2 (monomialFromList [Bright]) "eat" 1
+t  = addToTable emptyTable (dim) "hi" 4
+t2 = addToTable t  (bright) "woof" 2
+t3 = addToTable t2 (bright) "eat" 1
 
 tables = do
     print t
@@ -30,8 +33,8 @@ graphs = do
     print g
     print g2
 
-mySeen      = addToTable t3   (monomialFromList [Bright]) "BLOCKER" 1
-myPredicted = addToTable mySeen (monomialFromList [Bright]) "BLOCKEE" 1
+mySeen      = addToTable t3   (bright) "BLOCKER" 1
+myPredicted = addToTable mySeen (bright) "BLOCKEE" 1
 br = computeBlocking mySeen myPredicted
 
 blockingRules = print br
