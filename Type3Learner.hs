@@ -89,3 +89,12 @@ updateBlockingRow s p br = foldr f br pairs
   where pairs     = s `times` (p `S.difference` s)
         f (x,y)   = addEdge x y
         times a b = [(d,e) | d <- S.toList a, e <- S.toList b]
+
+-- With ms = [(4,m1); (9,m2); (1,m3); ...] (for example),
+-- intersect e ms total = (a,b), where:
+--      a = e intersected with the monomial in the head of ms (if ms has a
+--      head) or just e.
+--      b = the integer in the head of ms (if ms has a head) or just total+1.
+intersect :: (Ord f) => Monomial f -> [(Int, Monomial f)] -> Int -> (Int, Monomial f)
+intersect e ((i,mon):_) _     = (i,S.intersection mon e)
+intersect e []          total = (total+1,e)
