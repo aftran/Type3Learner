@@ -20,7 +20,7 @@ type Lexicon w f = M.Map w (Lexeme f)
 
 type Table w f = M.Map (Monomial f) (S.Set (Mi w))
 
-data Hypothesis w f br = Hypothesis (Lexicon w f) br
+data Hypothesis w f = Hypothesis (Lexicon w f) (GraphA (Mi w))
 
 -- In terms of Type3learner, matches e t = the morphs predicted to appear in
 -- environment e, according to table t.
@@ -57,18 +57,18 @@ similarity s t = S.size $ S.intersection s t
 compareDissimTo :: (Ord f) => Monomial f -> Monomial f -> Monomial f -> Ordering
 compareDissimTo e m1 m2 = compare (similarity e m2) (similarity e m1)
 
-data State w f br = State { lexicon    :: Lexicon w f
-                          , blocking   :: br
-                          , seen       :: Table w f
-                          , predicted  :: Table w f }
-                          -- Leave the free-variation as a computed structure
-                          -- unless there's an advantage to computing it each
-                          -- time.  (The OCaml code seems to keep old free
-                          -- variation pairs around despite recomputing them
-                          -- all, which is at best useless...
+data State w f = State { lexicon   :: Lexicon w f
+                       , blocking  :: GraphA (Mi w)
+                       , seen      :: Table w f
+                       , predicted :: Table w f }
+                       -- Leave the free-variation as a computed structure
+                       -- unless there's an advantage to computing it each
+                       -- time.  (The OCaml code seems to keep old free
+                       -- variation pairs around despite recomputing them
+                       -- all, which is at best useless...
 
 -- hypothesis s = the hypothesis in state s.
-hypothesis :: State w f br -> Hypothesis w f br
+hypothesis :: State w f -> Hypothesis w f
 hypothesis s = Hypothesis (lexicon s) (blocking s)
 
 -- Given a table of seen and predicted morphs, compute_blocking s p = the
@@ -98,3 +98,7 @@ updateBlockingRow s p br = foldr f br pairs
 intersect :: (Ord f) => Monomial f -> [(Int, Monomial f)] -> Int -> (Int, Monomial f)
 intersect e ((i,mon):_) _     = (i,S.intersection mon e)
 intersect e []          total = (total+1,e)
+-- TODO: We don't necessarily need to see total.  Instead, use Either to
+-- communicate to the caller whether we are intersecting with an element of the
+-- lst or creating a new homophone.  (Or do something else that fixes the weird
+-- allocation of responsibilities.)
