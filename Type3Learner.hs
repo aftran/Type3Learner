@@ -106,7 +106,8 @@ intersect e []          total = (total+1,e)
 -- synchronize mi meaning environment state = a new State after adding "Mi w
 -- int -> meaning" to the lexicon in response to seeing w in the given
 -- environment.
-synchronize :: (Ord f, Ord w) => w -> Int -> Monomial f -> Monomial f -> State w f -> State w f
+synchronize :: (Ord f, Ord w) =>
+    w -> Int -> Monomial f -> Monomial f -> State w f -> State w f
 synchronize w i meaning environment state = State { lexicon   = newL
                                                   , blocking  = newB
                                                   , seen      = newS

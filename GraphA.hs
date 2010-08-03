@@ -25,16 +25,5 @@ insNode a orig@(GraphA gr m) = fromMaybe def (fmap (const orig) (M.lookup a m))
                 m2      = M.insert a newNode m
                 gr2     = GC.insNode (newNode, a) gr
 
-
-
---    | M.lookup a m == Nothing = GraphA gr2 m2
---    | otherwise               = original
---      where m2   = M.insert a node m
---            node = head $ GC.newNodes 1 gr
---            gr2  = GC.insNode (node, a) gr
-
-
-
-
 instance (Show a) => Show (GraphA a) where
     show (GraphA g n) = show g
