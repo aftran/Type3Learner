@@ -60,7 +60,7 @@ compareDissimTo e m1 m2 = compare (similarity e m2) (similarity e m1)
 data State w f = State { lexicon   :: Lexicon w f
                        , blocking  :: GraphA (Mi w)
                        , seen      :: Table w f
-                       , predicted :: Table w f }
+                       , predicted :: Table w f } deriving Show
                        -- Leave the free-variation as a computed structure
                        -- unless there's an advantage to computing it each
                        -- time.  (The OCaml code seems to keep old free
@@ -102,3 +102,19 @@ intersect e []          total = (total+1,e)
 -- communicate to the caller whether we are intersecting with an element of the
 -- lst or creating a new homophone.  (Or do something else that fixes the weird
 -- allocation of responsibilities.)
+
+-- synchronize mi meaning environment state = a new State after adding "Mi w
+-- int -> meaning" to the lexicon in response to seeing w in the given
+-- environment.
+synchronize :: (Ord f, Ord w) => w -> Int -> Monomial f -> Monomial f -> State w f -> State w f
+synchronize w i meaning environment state = State { lexicon   = newL
+                                                  , blocking  = newB
+                                                  , seen      = newS
+                                                  , predicted = newP }
+  where s = seen      state
+        p = predicted state
+        l = lexicon   state
+        newL = addToLexicon l w i         meaning
+        newP = addToTable   p meaning     w i
+        newS = addToTable   s environment w i
+        newB = computeBlocking s p

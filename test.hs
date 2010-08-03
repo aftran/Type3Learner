@@ -39,8 +39,19 @@ br = computeBlocking mySeen myPredicted
 
 blockingRules = print br
 
-main = do
-    lexicons
-    tables
-    graphs
-    blockingRules
+s :: State String Feature
+s = State { lexicon   = emptyLexicon
+          , blocking  = GraphA.empty
+          , seen      = emptyTable
+          , predicted = emptyTable }
+
+s2 = synchronize "woof" 3 bright bright s
+
+states = do print s
+            print s2
+
+main = do lexicons
+          tables
+          graphs
+          blockingRules
+          states
