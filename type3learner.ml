@@ -449,20 +449,22 @@ module Make(UserTypes : ParamTypes) : T
         * this complex type of overlap has been detected, and b is a new digraph
         * containing blocking rules. *)
         let weird_overlap s2 p2 v br br2 = 
-                let vPairs = edges v in
                 let allBr = DG_Oper.union br br2 in
                 let allBrTc = DG_Oper.transitive_closure allBr in
                 let suspects =
                         let f (x,y) = edge_exists allBrTc x y in
-                        List.filter f vPairs
+                        List.filter f (edges v)
                 in
-                let f (x,y) (b,gr) =
-                        let grTc = DG_Oper.transitive_closure gr in
-                        let isBad = edge_exists grTc x y in
-                        let gr2 = if not isBad then (DG.remove_edge gr x y) else empty_digraph in
-                        b or isBad, gr2
+                let f (x,y) (b,gr,reducedNewEdges) =
+                        let reducedNewEdgesTc = DG_Oper.transitive_closure reducedNewEdges in
+                        let isBad = edge_exists reducedNewEdgesTc x y in
+                        let gr2, reducedNewEdges2 =
+                                if not isBad
+                                        then (DG.remove_edge gr x y),(DG.remove_edge reducedNewEdges x y)
+                                        else empty_digraph, empty_digraph in
+                        b or isBad, gr2, reducedNewEdges2
                 in
-                List.fold_right f suspects (false, allBr)
+                List.fold_right f suspects (false, allBr, br2)
 
         (* Return a meaning, morph index, free-variation graph, blocking-rule digraph,
          * seen table, and predicted table in response to the given hypothesis
@@ -477,7 +479,7 @@ module Make(UserTypes : ParamTypes) : T
         =
                 let i, mean = intersect e ms total in
                 let s2, p2, v2, br2 = synchronize s p v br m i mean e in
-                let hasWOverlap, br3 = weird_overlap s2 p2 v2 br br2 in
+                let hasWOverlap, br3, _ = weird_overlap s2 p2 v2 br br2 in
                 if (cycle_overlap br2) or hasWOverlap then
                         (* Start over without the head of ms *)
                         get_hypothesis lex v br s p m e (List.tl ms) total
