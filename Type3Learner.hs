@@ -102,6 +102,9 @@ intersect e []          total = (total+1,e)
 -- communicate to the caller whether we are intersecting with an element of the
 -- lst or creating a new homophone.  (Or do something else that fixes the weird
 -- allocation of responsibilities.)
+-- However, people who read the paper about this algorithm will probably be
+-- able to understand this code better if I keep the intersect function as it
+-- is.
 
 -- synchronize mi meaning environment state = a new State after adding "Mi w
 -- int -> meaning" to the lexicon in response to seeing w in the given

@@ -3,6 +3,7 @@ module GraphA (
     GraphA.empty,
     addEdge
 ) where
+-- TODO: This module might could be replaced by Data.Graph.EasyGrapher.
 
 import qualified Data.Graph.Inductive.Graph as GC
 import qualified Data.Graph.Inductive.Tree  as G
