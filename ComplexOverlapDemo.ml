@@ -17,6 +17,6 @@ let m4 =  L.list2monomial ["A1"; "B+"];;
 let m5 =  L.list2monomial ["A2"; "B+"];;
 let m6 =  L.list2monomial ["A3"; "B+"];;
 
-let text = [("y",m1);("y",m6);("w",m5);("x",m4);("y",m2)];; 
+let text = [("y",m1);("y",m6);("w",m5);("x",m4);("y",m4)];; 
 
 L.type3learn_with_printing text;;

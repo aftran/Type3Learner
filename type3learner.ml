@@ -444,6 +444,13 @@ module Make(UserTypes : ParamTypes) : T
                 0 < DG.in_degree digraph vertex
         with Invalid_argument _ -> false
 
+        (* remove_edge g x y is dg without an edge from x to y.  No change if g
+         * doesn't have an edge from x to y in the first place. *)
+        let remove_edge (dg:digraph) x y =
+                try
+                        DG.remove_edge dg x y
+                with Invalid_argument _ -> dg
+
         (* Detect a more complex type of overlap (see line 6 of the Overlap function in
         * Pertsova (2010)).  Returns a pair (hasOverlap, b) where hasOverlap = true iff
         * this complex type of overlap has been detected, and b is a new digraph
@@ -460,7 +467,7 @@ module Make(UserTypes : ParamTypes) : T
                         let isBad = edge_exists reducedNewEdgesTc x y in
                         let gr2, reducedNewEdges2 =
                                 if not isBad
-                                        then (DG.remove_edge gr x y),(DG.remove_edge reducedNewEdges x y)
+                                        then (remove_edge gr x y),(remove_edge reducedNewEdges x y)
                                         else empty_digraph, empty_digraph in
                         b or isBad, gr2, reducedNewEdges2
                 in
