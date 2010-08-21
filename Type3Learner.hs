@@ -29,6 +29,13 @@ matches :: (Ord f, Ord w) => Monomial f -> Table w f -> S.Set (Mi w)
 matches e = S.unions . M.elems . M.filterWithKey f
   where f k _ = e `S.isSubsetOf` k
 
+-- In terms of Type3learner, seenMorphs e t = the (Mi w)s seen in environment
+-- (Monomial) e, according to Table t.
+-- seenMorphs e t = the Set associated with Monomial e in Table t, if it exists,
+-- otherwise the empty Set.
+seenMorphs :: (Ord f) => Monomial f -> Table w f -> S.Set (Mi w)
+seenMorphs = M.findWithDefault S.empty
+
 -- addToLexicon lexicon morph index monomial = the lexicon with the added
 -- monomial (meaning) associated with the index of the morph.
 addToLexicon :: (Ord w) => Lexicon w f -> w -> Int -> Monomial f -> Lexicon w f
@@ -57,10 +64,11 @@ similarity s t = S.size $ S.intersection s t
 compareDissimTo :: (Ord f) => Monomial f -> Monomial f -> Monomial f -> Ordering
 compareDissimTo e m1 m2 = compare (similarity e m2) (similarity e m1)
 
-data State w f = State { lexicon   :: Lexicon w f
-                       , blocking  :: GraphA (Mi w)
-                       , seen      :: Table w f
-                       , predicted :: Table w f } deriving Show
+data State w f = State { lexicon       :: Lexicon w f
+                       , blocking      :: GraphA (Mi w)
+                       , freeVariation :: GraphA (Mi w)
+                       , seen          :: Table w f
+                       , predicted     :: Table w f } deriving Show
                        -- Leave the free-variation as a computed structure
                        -- unless there's an advantage to computing it each
                        -- time.  (The OCaml code seems to keep old free
@@ -106,19 +114,25 @@ intersect e []          total = (total+1,e)
 -- able to understand this code better if I keep the intersect function as it
 -- is.
 
+updateFreeVariationRow :: GraphA (Mi w) -> S.Set (Mi w) -> GraphA (Mi w)
+updateFreeVariationRow g s = g -- TODO: Stub.
+
 -- synchronize mi meaning environment state = a new State after adding "Mi w
 -- int -> meaning" to the lexicon in response to seeing w in the given
 -- environment.
 synchronize :: (Ord f, Ord w) =>
     w -> Int -> Monomial f -> Monomial f -> State w f -> State w f
-synchronize w i meaning environment state = State { lexicon   = newL
-                                                  , blocking  = newB
-                                                  , seen      = newS
-                                                  , predicted = newP }
-  where s = seen      state
-        p = predicted state
-        l = lexicon   state
+synchronize w i meaning environment state = State { lexicon       = newL
+                                                  , blocking      = newB
+                                                  , freeVariation = newF
+                                                  , seen          = newS
+                                                  , predicted     = newP }
+  where s = seen          state
+        p = predicted     state
+        f = freeVariation state
+        l = lexicon       state
         newL = addToLexicon l w i         meaning
         newP = addToTable   p meaning     w i
         newS = addToTable   s environment w i
+        newF = updateFreeVariationRow f (seenMorphs environment newS)
         newB = computeBlocking s p

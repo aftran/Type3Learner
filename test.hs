@@ -40,10 +40,11 @@ br = computeBlocking mySeen myPredicted
 blockingRules = print br
 
 s :: State String Feature
-s = State { lexicon   = emptyLexicon
-          , blocking  = GraphA.empty
-          , seen      = emptyTable
-          , predicted = emptyTable }
+s = State { lexicon       = emptyLexicon
+          , blocking      = GraphA.empty
+          , freeVariation = GraphA.empty
+          , seen          = emptyTable
+          , predicted     = emptyTable }
 
 s2 = synchronize "woof" 3 bright bright s
 
