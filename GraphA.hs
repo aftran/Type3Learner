@@ -8,7 +8,7 @@ module GraphA (
 
 import qualified Data.Graph.Inductive.Graph as GC
 import qualified Data.Graph.Inductive.Tree  as G
-import Data.Map as M
+import Data.Map                             as M
 import Data.Graph.Inductive.Basic (gsel, preorderF)
 import Data.Maybe
 import Data.Graph.Inductive.Query.DFS (reachable, dff)

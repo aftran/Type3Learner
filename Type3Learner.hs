@@ -1,11 +1,11 @@
 module Type3Learner where
 
-import qualified Data.Set as S
-import qualified Data.Map as M
+import Data.Set as S
+import Data.Map as M
 import Data.Maybe
 import GraphA
 
-type Monomial f = S.Set f
+type Monomial f = Set f
 
 monomialFromList :: (Ord f) => [f] -> Monomial f
 monomialFromList = S.fromList
@@ -14,18 +14,18 @@ monomialFromList = S.fromList
 data Mi w = Mi w Int
     deriving (Eq, Ord, Show)
 
-type Lexeme f = M.Map Int (Monomial f)
+type Lexeme f = Map Int (Monomial f)
 
-type Lexicon w f = M.Map w (Lexeme f)
+type Lexicon w f = Map w (Lexeme f)
 
-type Table w f = M.Map (Monomial f) (S.Set (Mi w))
+type Table w f = Map (Monomial f) (Set (Mi w))
 
 data Hypothesis w f = Hypothesis (Lexicon w f) (GraphA (Mi w))
 
 -- In terms of Type3learner, matches e t = the morphs predicted to appear in
 -- environment e, according to table t.
 -- matches e t = the union of all values of t whose key is a subset of e.
-matches :: (Ord f, Ord w) => Monomial f -> Table w f -> S.Set (Mi w)
+matches :: (Ord f, Ord w) => Monomial f -> Table w f -> Set (Mi w)
 matches e = S.unions . M.elems . M.filterWithKey f
   where f k _ = e `S.isSubsetOf` k
 
@@ -33,7 +33,7 @@ matches e = S.unions . M.elems . M.filterWithKey f
 -- (Monomial) e, according to Table t.
 -- seenMorphs e t = the Set associated with Monomial e in Table t, if it exists,
 -- otherwise the empty Set.
-seenMorphs :: (Ord f) => Monomial f -> Table w f -> S.Set (Mi w)
+seenMorphs :: (Ord f) => Monomial f -> Table w f -> Set (Mi w)
 seenMorphs = M.findWithDefault S.empty
 
 -- addToLexicon lexicon morph index monomial = the lexicon with the added
@@ -56,7 +56,7 @@ addToTable tbl monomial morph idx = M.alter f monomial tbl
         f = Just . fromMaybe (S.singleton m) . (fmap $ S.insert m)
 
 -- similarity s t = the cardinality of s intersected with t.
-similarity :: (Ord f) => S.Set f -> S.Set f -> Int
+similarity :: (Ord f) => Set f -> Set f -> Int
 similarity s t = S.size $ S.intersection s t
 
 -- Produce a compare function for sorting Monomals by DISsimilatiry to the
@@ -92,7 +92,7 @@ computeBlocking seen predicted = M.foldWithKey f GraphA.empty seen
 -- pair in the cartesian product seen*(predicted-seen).  This means creating a
 -- new blocking rule whenever a morph is predicted (but not seen) in the
 -- environment where another morph has been seen. *)
-updateBlockingRow :: (Ord w) => S.Set (Mi w) -> S.Set (Mi w) -> GraphA (Mi w) -> GraphA (Mi w)
+updateBlockingRow :: (Ord w) => Set (Mi w) -> Set (Mi w) -> GraphA (Mi w) -> GraphA (Mi w)
 updateBlockingRow s p br = foldr f br pairs
   where pairs     = s `times` (p `S.difference` s)
         f (x,y)   = addEdge x y
@@ -114,7 +114,7 @@ intersect e []          total = (total+1,e)
 -- able to understand this code better if I keep the intersect function as it
 -- is.
 
-updateFreeVariationRow :: GraphA (Mi w) -> S.Set (Mi w) -> GraphA (Mi w)
+updateFreeVariationRow :: GraphA (Mi w) -> Set (Mi w) -> GraphA (Mi w)
 updateFreeVariationRow g s = g -- TODO: Stub.
 
 -- synchronize mi meaning environment state = a new State after adding "Mi w
