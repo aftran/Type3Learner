@@ -4,6 +4,8 @@ import Data.Set as S
 import Data.Map as M
 import Data.Maybe
 import GraphA
+import Data.Monoid
+import List
 
 type Monomial f = Set f
 
@@ -93,6 +95,16 @@ computeBlocking seen predicted = M.foldWithKey f GraphA.empty seen
   where f k s br = let p = matches k predicted
                       in updateBlockingRow s p br
 
+-- a `times` b = Data.Set.toList (the cartesian product of a and b).
+times :: Set a -> Set b -> [(a,b)]
+a `times` b = [(d,e) | d <- S.toList a, e <- S.toList b]
+
+-- self f = a function that applies an endomorphism f to two of its argument.
+-- If self is already implemented somewhere else, I couldn't find it on
+-- Hoogle...
+self :: (a -> a -> b) -> a -> b
+self f x = f x x
+
 -- update_blocking_row seen predicted br = br with a new edge added for each
 -- pair in the cartesian product seen*(predicted-seen).  This means creating a
 -- new blocking rule whenever a morph is predicted (but not seen) in the
@@ -101,7 +113,6 @@ updateBlockingRow :: (Ord w) => Set (Mi w) -> Set (Mi w) -> GraphA (Mi w) -> Gra
 updateBlockingRow s p br = foldr f br pairs
   where pairs     = s `times` (p `S.difference` s)
         f (x,y)   = addEdge x y
-        times a b = [(d,e) | d <- S.toList a, e <- S.toList b]
 
 -- With ms = [(4,m1); (9,m2); (1,m3); ...] (for example),
 -- intersect e ms total = (a,b), where:
@@ -119,8 +130,23 @@ intersect e []          total = (total+1,e)
 -- able to understand this code better if I keep the intersect function as it
 -- is.
 
-updateFreeVariationRow :: GraphA (Mi w) -> Set (Mi w) -> GraphA (Mi w)
-updateFreeVariationRow g s = g -- TODO: Stub.
+updateFreeVariationRow :: (Ord w) => Set (Mi w) -> GraphA (Mi w) -> GraphA (Mi w)
+updateFreeVariationRow =
+                       -- It might be easier to read these comments in reverse
+                       -- order, because function composition applies the last
+                       -- function first:
+      appEndo          -- Remove the Endo wrapper, yielding a function of type
+                       -- of type (GraphA (Mi w) -> GraphA (Mi w)).
+    . mconcat          -- Compose the endomorphisms in the list into one
+    . convertToAdders  -- Turn each pair into a function that adds the pair to
+                       -- a GraphA as an edge.  (And wrap the function in an
+                       -- Endo, so that mconcat uses normal function
+                       -- composition ((.)).
+    . noSelfPairs      -- Remove pairs of the form (x,x) from the list.
+    . self times       -- Cartesian-product the set with itself (yields a
+                       -- list of pairs).
+        where noSelfPairs     = List.filter (\(a,b) -> a /= b)
+              convertToAdders = List.map    (\(a,b) -> Endo $ addEdge a b)
 
 -- synchronize mi meaning environment state = a new State after adding "Mi w
 -- int -> meaning" to the lexicon in response to seeing w in the given
@@ -132,12 +158,12 @@ synchronize w i meaning environment state = State { lexicon       = newL
                                                   , freeVariation = newF
                                                   , seen          = newS
                                                   , predicted     = newP }
-  where s = seen          state
-        p = predicted     state
-        f = freeVariation state
-        l = lexicon       state
+  where s  = seen          state
+        p  = predicted     state
+        fv = freeVariation state
+        l  = lexicon       state
         newL = addToLexicon l w i         meaning
         newP = addToTable   p meaning     w i
         newS = addToTable   s environment w i
-        newF = updateFreeVariationRow f (seenMorphs environment newS)
+        newF = updateFreeVariationRow (seenMorphs environment newS) fv
         newB = computeBlocking s p

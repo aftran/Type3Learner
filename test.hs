@@ -51,8 +51,13 @@ s2 = synchronize "woof" 3 bright bright s
 states = do print s
             print s2
 
+s3 = synchronize "howl" 1 bright bright s2
+
+freeVariationStates = print s3
+
 main = do lexicons
           tables
           graphs
           blockingRules
           states
+          freeVariationStates
