@@ -48,6 +48,11 @@ emptyLexicon = M.empty
 emptyTable :: Table w f
 emptyTable = M.empty
 
+-- lexicalMeanings m l = the Lexeme associated with m in Lexicon f, if it
+-- exists, otherwise the empty lexeme.
+lexicalMeanings :: (Ord w) => w -> Lexicon w f -> Lexeme f
+lexicalMeanings = M.findWithDefault M.empty
+
 -- addToTable tbl monomial morph index = the table with (Mi morph index) added
 -- to the set associated with monomial.
 addToTable :: (Ord f, Ord w) => Table w f -> Monomial f -> w -> Int -> Table w f
