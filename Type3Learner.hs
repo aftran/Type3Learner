@@ -29,10 +29,10 @@ matches :: (Ord f, Ord w) => Monomial f -> Table w f -> Set (Mi w)
 matches e = S.unions . M.elems . M.filterWithKey f
   where f k _ = e `S.isSubsetOf` k
 
--- In terms of Type3learner, seenMorphs e t = the (Mi w)s seen in environment
--- (Monomial) e, according to Table t.
 -- seenMorphs e t = the Set associated with Monomial e in Table t, if it exists,
 -- otherwise the empty Set.
+-- In terms of Type3learner, seenMorphs e t = the (Mi w)s seen in environment
+-- (Monomial) e, according to Table t.
 seenMorphs :: (Ord f) => Monomial f -> Table w f -> Set (Mi w)
 seenMorphs = M.findWithDefault S.empty
 
