@@ -1,8 +1,9 @@
 module GraphA (
-    GraphA(..),
-    GraphA.empty,
-    addEdge,
-    hasCycle
+      GraphA(..)
+    , GraphA.empty
+    , addEdge
+    , addSymmetricEdge
+    , hasCycle
 ) where
 -- TODO: This module might could be replaced by Data.Graph.EasyGrapher.
 
@@ -27,6 +28,10 @@ addEdge x y = f . (insNode y) . (insNode x)
           where gr2 = GC.insEdge (v1,v2,()) gr
                   where v1 = m ! x
                         v2 = m ! y
+
+-- addSymmetricEdge x y = (addEdge y x) . (addEdge x y).
+addSymmetricEdge :: (Ord a) => a -> a -> GraphA a -> GraphA a
+addSymmetricEdge x y = (addEdge y x) . (addEdge x y)
 
 -- Add a node to the graph.
 insNode :: (Ord a) => a -> GraphA a -> GraphA a
