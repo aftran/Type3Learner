@@ -109,7 +109,8 @@ self f x = f x x
 -- pair in the cartesian product seen*(predicted-seen).  This means creating a
 -- new blocking rule whenever a morph is predicted (but not seen) in the
 -- environment where another morph has been seen. *)
-updateBlockingRow :: (Ord w) => Set (Mi w) -> Set (Mi w) -> GraphA (Mi w) -> GraphA (Mi w)
+updateBlockingRow ::
+    (Ord w) => Set (Mi w) -> Set (Mi w) -> GraphA (Mi w) -> GraphA (Mi w)
 updateBlockingRow s p br = foldr f br pairs
   where pairs     = s `times` (p `S.difference` s)
         f (x,y)   = addEdge x y
@@ -119,7 +120,8 @@ updateBlockingRow s p br = foldr f br pairs
 --      a = e intersected with the monomial in the head of ms (if ms has a
 --      head) or just e.
 --      b = the integer in the head of ms (if ms has a head) or just total+1.
-intersect :: (Ord f) => Monomial f -> [(Int, Monomial f)] -> Int -> (Int, Monomial f)
+intersect :: (Ord f) =>
+    Monomial f -> [(Int, Monomial f)] -> Int -> (Int, Monomial f)
 intersect e ((i,mon):_) _     = (i,S.intersection mon e)
 intersect e []          total = (total+1,e)
 -- TODO: We don't necessarily need to see total.  Instead, use Either to
@@ -130,7 +132,11 @@ intersect e []          total = (total+1,e)
 -- able to understand this code better if I keep the intersect function as it
 -- is.
 
-updateFreeVariationRow :: (Ord w) => Set (Mi w) -> GraphA (Mi w) -> GraphA (Mi w)
+-- updateFreeVariationRow seetSet graph = the graph with a new edge added for
+-- each pair in the cartesian product seenSet*seenSet except for the pairs of
+-- the form (x,x).
+updateFreeVariationRow :: (Ord w) =>
+    Set (Mi w) -> GraphA (Mi w) -> GraphA (Mi w)
 updateFreeVariationRow =
                        -- It might be easier to read these comments in reverse
                        -- order, because function composition applies the last
