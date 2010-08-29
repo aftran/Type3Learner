@@ -100,7 +100,7 @@ times :: Set a -> Set b -> [(a,b)]
 a `times` b = [(d,e) | d <- S.toList a, e <- S.toList b]
 
 -- self f = a function that applies an endomorphism f to two of its argument.
--- If self is already implemented somewhere else, I couldn't find it on
+-- If self is already implemented in an existing library, I couldn't find it on
 -- Hoogle...
 self :: (a -> a -> b) -> a -> b
 self f x = f x x
@@ -132,7 +132,7 @@ intersect e []          total = (total+1,e)
 -- able to understand this code better if I keep the intersect function as it
 -- is.
 
--- updateFreeVariationRow seetSet graph = the graph with a new edge added for
+-- updateFreeVariationRow seenSet graph = the graph with a new edge added for
 -- each pair in the cartesian product seenSet*seenSet except for the pairs of
 -- the form (x,x).
 updateFreeVariationRow :: (Ord w) =>
@@ -141,13 +141,13 @@ updateFreeVariationRow =
                        -- It might be easier to read these comments in reverse
                        -- order, because function composition applies the last
                        -- function first:
-      appEndo          -- Remove the Endo wrapper, yielding a function of type
+      appEndo          -- Remove the Endo wrapper, yielding a function
                        -- of type (GraphA (Mi w) -> GraphA (Mi w)).
-    . mconcat          -- Compose the endomorphisms in the list into one
+    . mconcat          -- Compose the list of Endos together into a single Endo.
     . convertToAdders  -- Turn each pair into a function that adds the pair to
                        -- a GraphA as an edge.  (And wrap the function in an
                        -- Endo, so that mconcat uses normal function
-                       -- composition ((.)).
+                       -- composition ((.)).)
     . noSelfPairs      -- Remove pairs of the form (x,x) from the list.
     . self times       -- Cartesian-product the set with itself (yields a
                        -- list of pairs).
