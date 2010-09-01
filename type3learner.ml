@@ -274,7 +274,7 @@ module Make(UserTypes : ParamTypes) : T
         let print_digraph = print_string <<< digraph2string
 
         (* Print a free-variation graph. *)
-        let print_graph = print_string <<< graph2string
+        let print_graph   = print_string <<< graph2string
 
         (* list2morphXint_set x = an MSet containing the elements of list x *)
         let list2morphXint_set x = List.fold_right MSet.add x MSet.empty
