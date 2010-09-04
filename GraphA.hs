@@ -50,6 +50,8 @@ graphHasCycle :: G.Gr a b -> Bool
 graphHasCycle g = not . Prelude.null . gsel f $ g
   where f context = elem (GC.node' context) (reachableNotSelf context g)
 
+-- The list of Nodes that are reachable from the given Context, not including
+-- the Node in the Context itself.
 reachableNotSelf :: GC.Graph gr => GC.Context a b -> gr a b -> [GC.Node]
 reachableNotSelf c g = preorderF (dff (GC.suc' c) g)
 
