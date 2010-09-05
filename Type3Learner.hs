@@ -76,11 +76,11 @@ data State w f = State { lexicon       :: Lexicon w f
                        , freeVariation :: GraphA (Mi w)
                        , seen          :: Table w f
                        , predicted     :: Table w f } deriving Show
-                       -- Leave the free-variation as a computed structure
-                       -- unless there's an advantage to computing it each
-                       -- time.  (The OCaml code seems to keep old free
-                       -- variation pairs around despite recomputing them
-                       -- all, which is at best useless...
+
+-- The State that the type-3 learner should be in before it has seen any text
+-- elements.
+emptyState :: (Ord w) => State w f
+emptyState = State emptyLexicon GraphA.empty GraphA.empty M.empty M.empty
 
 -- hypothesis s = the hypothesis in state s.
 hypothesis :: State w f -> Hypothesis w f
