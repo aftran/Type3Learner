@@ -173,3 +173,30 @@ synchronize w i meaning environment state = State { lexicon       = newL
         newS = addToTable   s environment w i
         newF = updateFreeVariationRow (seenMorphs environment newS) fv
         newB = computeBlocking s p
+
+-- Return a new state in response to the given state and the witnessing of
+-- the given morph in the given environment.
+getHypothesis :: (Ord f, Ord w) => w -> Monomial f -> State w f -> State w f
+getHypothesis morph env state = foldr f lastResort sortedList
+  where sortedList     = let lexeme   = lexicalMeanings morph (lexicon state)
+                             comp a b = compareDissimTo env (snd a) (snd b)
+                         in sortBy comp $ M.toList lexeme
+        lastResort     = synchronize morph (1+length sortedList) env env state
+        f (idx,mean) b = let state2 = synchronize morph idx mean env state
+                             in if overlap state2 then b else state2
+
+-- Return whether an overlap has been detected in the state.  Overlap is
+-- defined in Pertsova (2010).
+overlap :: (Ord w) => State w f -> Bool
+overlap s = let b = blocking      s
+                v = freeVariation s
+                in (hasCycle b) || (freeVariationOverlap b v)
+
+-- Compute whether an overlap has been detected due to the blocking rules br
+-- causing the wrong prediction in some environment.  Equivalently, compute
+-- whether there is a blocking rule between two Mis that are also in free
+-- variation.
+freeVariationOverlap :: (Ord w) => GraphA (Mi w) -> GraphA (Mi w) -> Bool
+freeVariationOverlap b v =
+    let [bList, vList] = fmap (S.fromList . edges) [b, v]
+        in not . S.null $ vList `S.intersection` bList
