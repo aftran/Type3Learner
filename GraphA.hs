@@ -1,6 +1,7 @@
 module GraphA (
       GraphA(..)
     , GraphA.empty
+    , isEmpty
     , addEdge
     , addSymmetricEdge
     , hasCycle
@@ -22,6 +23,10 @@ data GraphA a = GraphA { graph    :: G.Gr a ()
 -- The empty GraphA.
 empty :: (Ord a) => GraphA a
 empty = GraphA GC.empty M.empty M.empty
+
+-- True iff the given GraphA is empty.
+isEmpty :: GraphA a -> Bool
+isEmpty = GC.isEmpty . graph
 
 -- Add an edge connecting the two nodes with the given labels (and add a node
 -- for each label if one is not already in the graph).
