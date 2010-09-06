@@ -1,5 +1,6 @@
 import Type3Learner
 import GraphA
+import PrettyPrinting
 
 
 data Feature = Bright | Dim
