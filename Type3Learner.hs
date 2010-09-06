@@ -203,10 +203,12 @@ freeVariationOverlap b v =
     let [bList, vList] = fmap (S.fromList . edges) [b, v]
         in not . S.null $ vList `S.intersection` bList
 
-type3learn :: (Ord w) => Text w f -> [State w f]
+type3learn :: (Ord w, Ord f) => Text w f -> [State w f]
 type3learn = reverse . snd . (foldl f (emptyState, []))
-  where f :: (State w f, [State w f]) -> (w, Monomial f) -> (State w f, [State w f])
-        f (state,log) b = (state,log) -- TODO: Stub.
+  where f :: (Ord w, Ord f) =>
+            (State w f, [State w f]) -> (w, Monomial f) -> (State w f, [State w f])
+        f (state,log) (morph,env) = (state2, state2:log)
+          where state2 = getHypothesis morph env state
 
 
 -- TODO: Stop using 'f' for functions, since we also use it for the type
