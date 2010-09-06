@@ -25,13 +25,14 @@ type Lexicon w f = Map w (Lexeme f)
 type Table w f = Map (Monomial f) (Set (Mi w))
 
 data Hypothesis w f = Hypothesis (Lexicon w f) (GraphA (Mi w))
+    deriving Show
 
 -- In terms of Type3learner, matches e t = the morphs predicted to appear in
 -- environment e, according to table t.
 -- matches e t = the union of all values of t whose key is a subset of e.
 matches :: (Ord f, Ord w) => Monomial f -> Table w f -> Set (Mi w)
-matches e = S.unions . M.elems . M.filterWithKey f
-  where f k _ = e `S.isSubsetOf` k
+matches e = S.unions . M.elems . M.filterWithKey g
+  where g k _ = e `S.isSubsetOf` k
 
 -- seenMorphs e t = the Set associated with Monomial e in Table t, if it exists,
 -- otherwise the empty Set.
@@ -43,8 +44,8 @@ seenMorphs = M.findWithDefault S.empty
 -- addToLexicon lexicon morph index monomial = the lexicon with the added
 -- monomial (meaning) associated with the index of the morph.
 addToLexicon :: (Ord w) => Lexicon w f -> w -> Int -> Monomial f -> Lexicon w f
-addToLexicon lex morph idx mon = M.alter f morph lex
-  where f = Just . fromMaybe (M.singleton idx mon) . fmap (M.insert idx mon)
+addToLexicon lex morph idx mon = M.alter g morph lex
+  where g = Just . fromMaybe (M.singleton idx mon) . fmap (M.insert idx mon)
 
 emptyLexicon :: Lexicon w f
 emptyLexicon = M.empty
@@ -60,9 +61,9 @@ lexicalMeanings = M.findWithDefault M.empty
 -- addToTable tbl monomial morph index = the table with (Mi morph index) added
 -- to the set associated with monomial.
 addToTable :: (Ord f, Ord w) => Table w f -> Monomial f -> w -> Int -> Table w f
-addToTable tbl monomial morph idx = M.alter f monomial tbl
+addToTable tbl monomial morph idx = M.alter g monomial tbl
   where m = Mi morph idx
-        f = Just . fromMaybe (S.singleton m) . (fmap $ S.insert m)
+        g = Just . fromMaybe (S.singleton m) . (fmap $ S.insert m)
 
 -- similarity s t = the cardinality of s intersected with t.
 similarity :: (Ord f) => Set f -> Set f -> Int
@@ -93,8 +94,8 @@ hypothesis s = Hypothesis (lexicon s) (blocking s)
 -- where another, b, is predicted-but-not-seen, add a blocking rule from a to
 -- b.
 computeBlocking :: (Ord f, Ord w) => Table w f -> Table w f -> GraphA (Mi w)
-computeBlocking seen predicted = M.foldWithKey f GraphA.empty seen
-  where f k s br = let p = matches k predicted
+computeBlocking seen predicted = M.foldWithKey g GraphA.empty seen
+  where g k s br = let p = matches k predicted
                       in updateBlockingRow s p br
 
 -- a `times` b = Data.Set.toList (the cartesian product of a and b).
@@ -105,7 +106,7 @@ a `times` b = [(d,e) | d <- S.toList a, e <- S.toList b]
 -- If self is already implemented in an existing library, I couldn't find it on
 -- Hoogle...
 self :: (a -> a -> b) -> a -> b
-self f x = f x x
+self g x = g x x
 
 -- update_blocking_row seen predicted br = br with a new edge added for each
 -- pair in the cartesian product seen*(predicted-seen).  This means creating a
@@ -113,9 +114,9 @@ self f x = f x x
 -- environment where another morph has been seen. *)
 updateBlockingRow ::
     (Ord w) => Set (Mi w) -> Set (Mi w) -> GraphA (Mi w) -> GraphA (Mi w)
-updateBlockingRow s p br = foldr f br pairs
+updateBlockingRow s p br = foldr g br pairs
   where pairs     = s `times` (p `S.difference` s)
-        f (x,y)   = addEdge x y
+        g (x,y)   = addEdge x y
 
 -- With ms = [(4,m1); (9,m2); (1,m3); ...] (for example),
 -- intersect e ms total = (a,b), where:
@@ -180,12 +181,12 @@ synchronize w i meaning environment state = State { lexicon       = newL
 -- Return a new state in response to the given state and the witnessing of
 -- the given morph in the given environment.
 getHypothesis :: (Ord f, Ord w) => w -> Monomial f -> State w f -> State w f
-getHypothesis morph env state = foldr f lastResort sortedList
+getHypothesis morph env state = foldr g lastResort sortedList
   where sortedList     = let lexeme   = lexicalMeanings morph (lexicon state)
                              comp a b = compareDissimTo env (snd a) (snd b)
-                         in sortBy comp $ M.toList lexeme
+                             in sortBy comp $ M.toList lexeme
         lastResort     = synchronize morph (1+length sortedList) env env state
-        f (idx,mean) b = let state2 = synchronize morph idx mean env state
+        g (idx,mean) b = let state2 = synchronize morph idx mean env state
                              in if overlap state2 then b else state2
 
 -- Return whether an overlap has been detected in the state.  Overlap is
@@ -205,10 +206,10 @@ freeVariationOverlap b v =
         in not . S.null $ vList `S.intersection` bList
 
 type3learn :: (Ord w, Ord f) => Text w f -> [State w f]
-type3learn = reverse . snd . (foldl f (emptyState, []))
-  where f :: (Ord w, Ord f) =>
+type3learn = reverse . snd . foldl g (emptyState, [])
+  where g :: (Ord w, Ord f) =>
             (State w f, [State w f]) -> (w, Monomial f) -> (State w f, [State w f])
-        f (state,log) (morph,env) = (state2, state2:log)
+        g (state,log) (morph,env) = (state2, state2:log)
           where state2 = getHypothesis morph env state
 
 
