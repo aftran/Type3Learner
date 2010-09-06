@@ -146,15 +146,16 @@ updateFreeVariationRow =
       appEndo          -- Remove the Endo wrapper, yielding a function
                        -- of type (GraphA (Mi w) -> GraphA (Mi w)).
     . mconcat          -- Compose the list of Endos together into a single Endo.
-    . convertToAdders  -- Turn each pair into a function that adds the pair to
-                       -- a GraphA as an edge.  (And wrap the function in an
-                       -- Endo, so that mconcat uses normal function
-                       -- composition ((.)).)
+    . convertToAdders  -- Turn each pair into a function that adds the pair
+                       -- (and its reverse) to a GraphA as an edge.  (And wrap
+                       -- the function in an Endo, so that mconcat uses
+                       -- normal function composition ((.)).)
     . noSelfPairs      -- Remove pairs of the form (x,x) from the list.
     . self times       -- Cartesian-product the set with itself (yields a
                        -- list of pairs).
         where noSelfPairs     = List.filter (\(a,b) -> a /= b)
-              convertToAdders = List.map    (\(a,b) -> Endo $ addEdge a b)
+              convertToAdders =
+                  List.map (\(a,b) -> Endo $ (addEdge a b) . (addEdge b a))
 
 -- synchronize mi meaning environment state = a new State after adding "Mi w
 -- int -> meaning" to the lexicon in response to seeing w in the given
