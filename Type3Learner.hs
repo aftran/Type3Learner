@@ -7,6 +7,8 @@ import GraphA
 import Data.Monoid
 import List
 
+type Text w f = [(w, Monomial f)]
+
 type Monomial f = Set f
 
 monomialFromList :: (Ord f) => [f] -> Monomial f
@@ -200,3 +202,12 @@ freeVariationOverlap :: (Ord w) => GraphA (Mi w) -> GraphA (Mi w) -> Bool
 freeVariationOverlap b v =
     let [bList, vList] = fmap (S.fromList . edges) [b, v]
         in not . S.null $ vList `S.intersection` bList
+
+type3learn :: (Ord w) => Text w f -> [State w f]
+type3learn = reverse . snd . (foldl f (emptyState, []))
+  where f :: (State w f, [State w f]) -> (w, Monomial f) -> (State w f, [State w f])
+        f (state,log) b = (state,log) -- TODO: Stub.
+
+
+-- TODO: Stop using 'f' for functions, since we also use it for the type
+-- variable for features.
