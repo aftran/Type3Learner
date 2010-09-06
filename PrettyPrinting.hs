@@ -1,5 +1,8 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, UndecidableInstances #-}
-module PrettyPrinting where
+module PrettyPrinting (
+      prettyDoc
+    , prettyDocFreeVariation
+) where
 
 import Type3Learner
 import Text.PrettyPrint.HughesPJ
@@ -37,6 +40,7 @@ prettyDocSet = braces
              . punctuate comma
              . fmap prettyDoc
              . S.toList
+-- TODO: Stop repeating the above Pretty instance.
 
 instance Show f => Pretty (Lexeme f) where
     prettyDoc = vcat
@@ -57,11 +61,54 @@ instance (Show w, Show f) => Pretty (Table w f) where
               . M.toList
 
 instance (Pretty a, Ord a) => Pretty (GraphA a) where
-    prettyDoc gr = vcat . fmap h $ pairs
-      where pairs = edges gr
-            h (x,y)  = prettyDoc x $$ nest tabs (text "->" <+> prettyDoc y)
-            -- Line up the ->s vertically by padding (just like how I line up
-            -- ->s and =s in this Haskell code):
-            tabs     = 1 + (maximumBy compare firstWordLengths)
-              where firstWordLengths = fmap ff pairs
-                      where ff (x, _) = length $ prettyShow x
+    prettyDoc = prettifyGraph "->" (const True)
+
+-- Pretty-print a graph (whose edges are filtered by eFilter), separating
+-- adjacent edges with arrowMsg.  For example, if arrowMsg is " ~-> ", then each
+-- edge between a and b will look like "a ~-> b".
+prettifyGraph :: (Pretty a, Ord a) => String -> ((a,a) -> Bool) -> GraphA a -> Doc
+prettifyGraph arrowMsg eFilter gr
+             | Data.List.null pairs = char 'Ø'
+             | otherwise            = vcat . fmap h $ pairs
+  where pairs = Data.List.filter eFilter $ edges gr
+        h (x,y) = prettyDoc x $$ nest tab (text arrowMsg <+> prettyDoc y)
+          -- Line up the ->s vertically by adding extra space before it (just
+          -- like how I line up ->s and =s in this Haskell code):
+          where tab = 1 + (maximumBy compare firstWordLengths)
+                  where firstWordLengths = fmap ff pairs
+                          where ff (x, _) = length $ prettyShow x
+
+-- Alternate pretty-printing method for graphs that are symmetric (not
+-- directed).  Prints edges as "<->" and does not print "y <-> x" if "x <-> y"
+-- is already being printed.  This is only appropriate for non-directed graphs
+-- (graphs where x -> y iff y -> x).
+prettyDocFreeVariation :: (Pretty a, Ord a) => GraphA a -> Doc
+prettyDocFreeVariation = prettifyGraph "<->" (uncurry (<))
+
+-- Literal strings that will be used in the pretty-printing of Hypothesis and
+-- State.
+lexMsg       = "lexicon:"
+brMsg        = "blocking rules:"
+fvMsg        = "free variation relations:"
+seenMsg      = "seen:"
+predictedMsg = "predicted (ignoring blocking rules):"
+
+-- How many spaces to prepend to certain lines (for grouping).
+tab = 4
+tabText :: (Pretty a) => a -> Doc
+tabText = (nest tab) . prettyDoc
+
+instance (Show w, Show f, Ord w) => Pretty (Hypothesis w f) where
+    prettyDoc (Hypothesis l g) =    text lexMsg
+                                 $$ tabText l
+                                 $$ text brMsg
+                                 $$ tabText g
+
+instance (Show w, Show f, Ord w) => Pretty (State w f) where
+    prettyDoc s =    prettyDoc (hypothesis s)
+                  $$ text fvMsg
+                  $$ tabText (freeVariation s)
+                  $$ text seenMsg
+                  $$ tabText (seen s)
+                  $$ text predictedMsg
+                  $$ tabText (predicted s)
