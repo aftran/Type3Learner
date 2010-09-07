@@ -46,8 +46,8 @@ s = State { lexicon       = emptyLexicon
 
 s2 = synchronize "woof" 3 bright bright s
 
-states = do print s
-            print s2
+theStates = do print s
+               print s2
 
 s3 = synchronize "howl" 1 bright bright s2
 
@@ -57,5 +57,5 @@ main = do lexicons
           tables
           graphs
           blockingRules
-          states
+          theStates
           freeVariationStates

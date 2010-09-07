@@ -27,6 +27,10 @@ type Table w f = Map (Monomial f) (Set (Mi w))
 data Hypothesis w f = Hypothesis (Lexicon w f) (GraphA (Mi w))
     deriving Show
 
+data Derivation w f = Derivation { inputs :: Text w f
+                                 , states :: [State w f] }
+    deriving Show
+
 -- In terms of Type3learner, matches e t = the morphs predicted to appear in
 -- environment e, according to table t.
 -- matches e t = the union of all values of t whose key is a subset of e.
@@ -178,17 +182,6 @@ synchronize w i meaning environment state = State { lexicon       = newL
         newF = updateFreeVariationRow (seenMorphs environment newS) fv
         newB = computeBlocking s p
 
--- Return a new state in response to the given state and the witnessing of
--- the given morph in the given environment.
-getHypothesis :: (Ord f, Ord w) => w -> Monomial f -> State w f -> State w f
-getHypothesis morph env state = foldr g lastResort sortedList
-  where sortedList     = let lexeme   = lexicalMeanings morph (lexicon state)
-                             comp a b = compareDissimTo env (snd a) (snd b)
-                             in sortBy comp $ M.toList lexeme
-        lastResort     = synchronize morph (1+length sortedList) env env state
-        g (idx,mean) b = let state2 = synchronize morph idx mean env state
-                             in if overlap state2 then b else state2
-
 -- Return whether an overlap has been detected in the state.  Overlap is
 -- defined in Pertsova (2010).
 overlap :: (Ord w) => State w f -> Bool
@@ -205,13 +198,28 @@ freeVariationOverlap b v =
     let [bList, vList] = fmap (S.fromList . edges) [b, v]
         in not . S.null $ vList `S.intersection` bList
 
-type3learn :: (Ord w, Ord f) => Text w f -> [State w f]
-type3learn = reverse . snd . foldl g (emptyState, [])
+-- Return a new state in response to the given state and the witnessing of
+-- the given morph in the given environment.
+type3increment :: (Ord f, Ord w) => w -> Monomial f -> State w f -> State w f
+type3increment morph env state = foldr g lastResort sortedList
+  where sortedList     = let lexeme   = lexicalMeanings morph (lexicon state)
+                             comp a b = compareDissimTo env (snd a) (snd b)
+                             in sortBy comp $ M.toList lexeme
+        lastResort     = synchronize morph (1+length sortedList) env env state
+        g (idx,mean) b = let state2 = synchronize morph idx mean env state
+                             in if overlap state2 then b else state2
+
+-- The list of states that the type-3 learner was in given an input text (in
+-- order of oldest to newest).
+type3history :: (Ord w, Ord f) => Text w f -> [State w f]
+type3history = reverse . snd . foldl g (emptyState, [])
   where g :: (Ord w, Ord f) =>
             (State w f, [State w f]) -> (w, Monomial f) -> (State w f, [State w f])
         g (state,log) (morph,env) = (state2, state2:log)
-          where state2 = getHypothesis morph env state
+          where state2 = type3increment morph env state
 
-
--- TODO: Stop using 'f' for functions, since we also use it for the type
--- variable for features.
+-- The entire derivation (a list of states along with the input text) in
+-- response to the given text.
+type3derivation :: (Ord w, Ord f) => Text w f -> Derivation w f
+type3derivation t = Derivation { inputs = t
+                               , states = type3history t }

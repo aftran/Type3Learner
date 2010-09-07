@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, UndecidableInstances #-}
 module PrettyPrinting (
       prettyDoc
+    , prettyShow
+    , prettyPrint
     , prettyDocFreeVariation
 ) where
 
@@ -10,6 +12,7 @@ import Data.Set as S
 import Data.Map as M
 import GraphA
 import Data.List
+import Control.Applicative
 
 class (Show a) => Pretty a where
     prettyDoc   :: a -> Doc
@@ -33,11 +36,10 @@ instance Show f => Pretty (Set f) where
               . fmap (text . show)
               . S.toList
 
--- Generate a pretty-printed Doc of a set that contains of Pretty things.
+-- Generate a spread-out, brace-less Doc of a set that contains of Pretty
+-- things.
 prettyDocSet :: (Pretty a) => Set a -> Doc
-prettyDocSet = braces
-             . hsep
-             . punctuate comma
+prettyDocSet = vcat
              . fmap prettyDoc
              . S.toList
 -- TODO: Stop repeating the above Pretty instance.
@@ -57,7 +59,7 @@ instance (Show w, Show f) => Pretty (Lexicon w f) where
 instance (Show w, Show f) => Pretty (Table w f) where
     prettyDoc = vcat
               . fmap
-                  (\(mon, set) -> prettyDoc mon <> colon $$ nest 4 (prettyDocSet set))
+                  (\(mon, set) -> prettyDoc mon <> colon $$ nest tab (prettyDocSet set))
               . M.toList
 
 instance (Pretty a, Ord a) => Pretty (GraphA a) where
@@ -87,11 +89,11 @@ prettyDocFreeVariation = prettifyGraph "<->" (uncurry (<))
 
 -- Literal strings that will be used in the pretty-printing of Hypothesis and
 -- State.
-lexMsg       = "lexicon:"
-brMsg        = "blocking rules:"
-fvMsg        = "free variation relations:"
-seenMsg      = "seen:"
-predictedMsg = "predicted (ignoring blocking rules):"
+lexMsg       = "Lexicon:"
+brMsg        = "Blocking rules:"
+fvMsg        = "Free variation relations:"
+seenMsg      = "Seen:"
+predictedMsg = "Reverse lexicon:"
 
 -- How many spaces to prepend to certain lines (for grouping).
 tab = 4
@@ -112,3 +114,15 @@ instance (Show w, Show f, Ord w) => Pretty (State w f) where
                   $$ tabText (seen s)
                   $$ text predictedMsg
                   $$ tabText (predicted s)
+
+instance (Show w, Show f, Ord w) => Pretty (Derivation w f) where
+    prettyDoc (Derivation inputs states) = vcat . getZipList $
+                                           announce . int <$> ZipList [1..]
+                                           <*>
+                                           (ZipList $ zipWith g inputs states)
+      where announce number doc = text "Step" <+> number <> colon <+> doc
+            g (morph,env) state =     text (show morph)
+                                  <+> text "in"
+                                  <+> text (show env)
+                                  $$ prettyDoc state
+                                  <> text "\n"
