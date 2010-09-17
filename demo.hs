@@ -15,10 +15,10 @@ m4 = monomialFromList [Minus A,  Minus B]
 text1 = [("y",m1), ("x",m2), ("y",m3), ("x",m4)]
 text2 = [("y",m1), ("y",m2), ("y",m3), ("x",m4)]
 
-history1 = type3history text1
-history2 = type3history text2
+derivation1 = type3derivation text1
+derivation2 = type3derivation text2
 
 main = do print "TEXT ONE\n========"
-          print history1
+          prettyPrint derivation1
           print "\n\nTEXT TWO\n========"
-          print history2
+          prettyPrint derivation2
