@@ -411,7 +411,7 @@ module Make(UserTypes : ParamTypes) : T
                 let v2 = update_free_variation v seen in
                 s2, p2, v2, br2
 
-        (* cycle x is true iff x has a cycle. *)
+        (* cycle_overlap x is true iff x has a cycle. *)
         let cycle_overlap = DFS.has_cycle
 
         (* edges v = a list of pairs (x,y) such that x and y are adjacent to each other
@@ -419,59 +419,6 @@ module Make(UserTypes : ParamTypes) : T
         let edges v =
                 let f x y a = (x,y) :: ((y,x)::a) in
                 G.fold_edges f v []
-
-        module PathChecker = Graph.Path.Check(DG)
-
-        module DG_Oper = Graph.Oper.P(DG)
-
-        (* path_exists pc x y =  true iff there is a path from x to y in the
-         * path-checker pc.
-         * SEVERE: This function does not actually work, due to what seems to
-         * be a bug in ocamlgraph.  For now, use edge_exists and
-         * DG_Oper.transitive_closure instead. *)
-        let path_exists_pc pc x y = PathChecker.check_path pc x y
-
-        (* edge_exists g x y = true iff there is an edge directly from x to
-         * y in the digraph g. *)
-        let edge_exists g x y  =
-                try
-                        DG.find_edge g x y;
-                        true
-                with Not_found -> false
-
-        (* has_predecessor g y = true iff y has a predecessor in digraph g. *)
-        let has_predecessor digraph vertex = try
-                0 < DG.in_degree digraph vertex
-        with Invalid_argument _ -> false
-
-        (* remove_edge g x y is dg without an edge from x to y.  No change if g
-         * doesn't have an edge from x to y in the first place. *)
-        let remove_edge (dg:digraph) x y =
-                try
-                        DG.remove_edge dg x y
-                with Invalid_argument _ -> dg
-
-        (* Detect a more complex type of overlap (see line 6 of the Overlap function in
-        * Pertsova (2010)).  Returns a pair (hasOverlap, b) where hasOverlap = true iff
-        * this complex type of overlap has been detected, and b is a new digraph
-        * containing blocking rules. *)
-        let weird_overlap s2 p2 v br br2 = 
-                let allBr = DG_Oper.union br br2 in
-                let allBrTc = DG_Oper.transitive_closure allBr in
-                let suspects =
-                        let f (x,y) = edge_exists allBrTc x y in
-                        List.filter f (edges v)
-                in
-                let f (x,y) (b,gr,reducedNewEdges) =
-                        let reducedNewEdgesTc = DG_Oper.transitive_closure reducedNewEdges in
-                        let isBad = edge_exists reducedNewEdgesTc x y in
-                        let gr2, reducedNewEdges2 =
-                                if not isBad
-                                        then (remove_edge gr x y),(remove_edge reducedNewEdges x y)
-                                        else empty_digraph, empty_digraph in
-                        b or isBad, gr2, reducedNewEdges2
-                in
-                List.fold_right f suspects (false, allBr, br2)
 
         (* Return a meaning, morph index, free-variation graph, blocking-rule digraph,
          * seen table, and predicted table in response to the given hypothesis
@@ -486,8 +433,7 @@ module Make(UserTypes : ParamTypes) : T
         =
                 let i, mean = intersect e ms total in
                 let s2, p2, v2, br2 = synchronize s p v br m i mean e in
-                let hasWOverlap, br3, _ = weird_overlap s2 p2 v2 br br2 in
-                if (cycle_overlap br2) or hasWOverlap then
+                if cycle_overlap br2 then
                         (* Start over without the head of ms *)
                         get_hypothesis lex v br s p m e (List.tl ms) total
                         (* Question: what happens if everything in ms results in an
@@ -497,7 +443,7 @@ module Make(UserTypes : ParamTypes) : T
                          * anything.
                          * Upshot: this recursion will be finite.*)
                 else
-                        mean, i, v2, br3, s2, p2
+                        mean, i, v2, br2, s2, p2
 
         (* lexeme2list l = the list of (key,value) pairs in l, in no particular
          * order. *)
