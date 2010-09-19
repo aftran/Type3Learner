@@ -2,7 +2,11 @@ import Type3Learner
 import PrettyPrinting
 
 data Signed a = Plus a | Minus a
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord)
+
+instance (Show a) => Show (Signed a) where
+    show (Plus  x) = "+" ++ (show x)
+    show (Minus x) = "-" ++ (show x)
 
 data Feature = A | B
     deriving (Show, Eq, Ord)
@@ -18,7 +22,9 @@ text2 = [("y",m1), ("y",m2), ("y",m3), ("x",m4)]
 derivation1 = type3derivation text1
 derivation2 = type3derivation text2
 
-main = do print "TEXT ONE\n========"
+main = do putStrLn "TEXT ONE"
+          putStrLn "========"
           prettyPrint derivation1
-          print "\n\nTEXT TWO\n========"
+          putStrLn "TEXT TWO"
+          putStrLn "========"
           prettyPrint derivation2

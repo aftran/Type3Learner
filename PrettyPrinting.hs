@@ -89,11 +89,11 @@ prettyDocFreeVariation = prettifyGraph "<->" (uncurry (<))
 
 -- Literal strings that will be used in the pretty-printing of Hypothesis and
 -- State.
-lexMsg       = "Lexicon:"
-brMsg        = "Blocking rules:"
-fvMsg        = "Free variation relations:"
-seenMsg      = "Seen:"
-predictedMsg = "Reverse lexicon:"
+lexMsg       = "\nLexicon:"
+brMsg        = "\nBlocking rules:"
+fvMsg        = "\nFree variation relations:"
+seenMsg      = "\nSeen:"
+predictedMsg = "\nReverse lexicon:"
 
 -- How many spaces to prepend to certain lines (for grouping).
 tab = 4
@@ -123,6 +123,6 @@ instance (Show w, Show f, Ord w) => Pretty (Derivation w f) where
       where announce number doc = text "Step" <+> number <> colon <+> doc
             g (morph,env) state =     text (show morph)
                                   <+> text "in"
-                                  <+> text (show env)
+                                  <+> text (prettyShow env)
                                   $$ prettyDoc state
-                                  <> text "\n"
+                                  <> text "\n\n"
