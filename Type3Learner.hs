@@ -189,7 +189,8 @@ type3increment morph env state = foldr g lastResort sortedList
                              comp a b = compareDissimTo env (snd a) (snd b)
                              in sortBy comp $ M.toList lexeme
         lastResort     = synchronize morph (1+length sortedList) env env state
-        g (idx,mean) b = let state2 = synchronize morph idx mean env state
+        g (idx,mean) b = let mean2  = mean `S.intersection` env
+                             state2 = synchronize morph idx mean2 env state
                              in if overlap state2 then b else state2
 
 -- The list of states that the type-3 learner was in given an input text (in
