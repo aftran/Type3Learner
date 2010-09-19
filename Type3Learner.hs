@@ -99,8 +99,8 @@ hypothesis s = Hypothesis (lexicon s) (blocking s)
 -- b.
 computeBlocking :: (Ord f, Ord w) => Table w f -> Table w f -> GraphA (Mi w)
 computeBlocking seen predicted = M.foldWithKey g GraphA.empty seen
-  where g k s br = let p = matches k predicted
-                      in updateBlockingRow s p br
+  where g key seenSet br = let predictedSet = matches key predicted
+                               in updateBlockingRow seenSet predictedSet br
 
 -- a `times` b = Data.Set.toList (the cartesian product of a and b).
 times :: Set a -> Set b -> [(a,b)]
