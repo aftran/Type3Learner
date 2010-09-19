@@ -122,23 +122,6 @@ updateBlockingRow s p br = foldr g br pairs
   where pairs     = s `times` (p `S.difference` s)
         g (x,y)   = addEdge x y
 
--- With ms = [(4,m1); (9,m2); (1,m3); ...] (for example),
--- intersect e ms total = (a,b), where:
---      a = e intersected with the monomial in the head of ms (if ms has a
---      head) or just e.
---      b = the integer in the head of ms (if ms has a head) or just total+1.
-intersect :: (Ord f) =>
-    Monomial f -> [(Int, Monomial f)] -> Int -> (Int, Monomial f)
-intersect e ((i,mon):_) _     = (i,S.intersection mon e)
-intersect e []          total = (total+1,e)
--- TODO: We don't necessarily need to see total.  Instead, use Either to
--- communicate to the caller whether we are intersecting with an element of the
--- lst or creating a new homophone.  (Or do something else that fixes the weird
--- allocation of responsibilities.)
--- However, people who read the paper about this algorithm will probably be
--- able to understand this code better if I keep the intersect function as it
--- is.
-
 -- updateFreeVariationRow seenSet graph = the graph with a new edge added for
 -- each pair in the cartesian product seenSet*seenSet except for the pairs of
 -- the form (x,x).
