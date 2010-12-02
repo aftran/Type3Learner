@@ -36,7 +36,7 @@ data Derivation w f = Derivation { inputs :: Text w f
 -- matches e t = the union of all values of t whose key is a subset of e.
 matches :: (Ord f, Ord w) => Monomial f -> Table w f -> Set (Mi w)
 matches e = S.unions . M.elems . M.filterWithKey g
-  where g k _ = e `S.isSubsetOf` k
+  where g k _ = k `S.isSubsetOf` e
 
 -- seenMorphs e t = the Set associated with Monomial e in Table t, if it exists,
 -- otherwise the empty Set.
