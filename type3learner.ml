@@ -414,11 +414,6 @@ module Make(UserTypes : ParamTypes) : T
         (* cycle_overlap x is true iff x has a cycle. *)
         let cycle_overlap = DFS.has_cycle
 
-        (* edges v = a list of pairs (x,y) such that x and y are adjacent to each other
-         * in v.  Note that if (x,y) is a member of edges v, then so is (y,x). *)
-        let edges v =
-                let f x y a = (x,y) :: ((y,x)::a) in
-                G.fold_edges f v []
 
         (* Return a meaning, morph index, free-variation graph, blocking-rule digraph,
          * seen table, and predicted table in response to the given hypothesis
