@@ -146,6 +146,8 @@ module Make(UserTypes : ParamTypes) : T
 
         module DFS = Graph.Traverse.Dfs(DG)
 
+        module DG_Oper = Graph.Oper.P(DG)
+
         (* The free-variation pairs will be stored in an undirected graph: *)
 
         module G = Graph.Persistent.Graph.Concrete(IndexedMorph)
@@ -305,6 +307,12 @@ module Make(UserTypes : ParamTypes) : T
         let meanings (m:morph) (l:lexicon) =
                 try Lexicon.find m l with Not_found -> IntMap.empty
 
+        (* lookup m i l returns the meaning associated with m_i according to
+         * lexicon l.
+         * Raises Not_found if no such meaning exists. *)
+        let lookup (m:morph) (i:int) (l:lexicon) =
+                IntMap.find i (meanings m l)
+
         (*  update_lex l m i mn = the lexicon l with the added meaning mn associated
          *  with index i of morph m. *)
         let update_lex (l:lexicon) (m:morph) (i:int) (mn:monomial) =
@@ -414,6 +422,30 @@ module Make(UserTypes : ParamTypes) : T
         (* cycle_overlap x is true iff x has a cycle. *)
         let cycle_overlap = DFS.has_cycle
 
+        (* Shortcut for the transitive closure function. *)
+        let tc = DG_Oper.transitive_closure
+
+        (* Returns whether there is an edge (p1,p2) in br such that the meaning
+         * of p1 is a subset of the meaning of p2 (according to lexicon lex).
+         * Equivalently, returns whether a morph both blocks and completely
+         * covers a second morph.  In these cases, the second morph has no
+         * effect on the output language of the hypothesis. *)
+         let utter_blocking br lex =
+                let brTc = tc br in
+                let g ((m1,i1),(m2,i2)) =
+                        FSet.subset (lookup m1 i1 lex) (lookup m2 i2 lex) in
+                List.exists g (digraph2pairs brTc)
+                (* TODO: Think about whether this "Not_found -> false" is
+                 * right.  I think Not_found only happens when we're looking up
+                 * the newly-witnessed text entry, since the lexicon doesn't
+                 * reflect the putative new text entry [which would be either
+                 * intersected into an existing thingy -- in that case the
+                 * lookup DOES work, but it's wrong -- or its own new entry --
+                 * in that case the lookup doesn't work, which means we should
+                 * actually default to the witnessed environment when Not_found
+                 * happens, rather than assuming false]. *)
+                (* TODO: Stub until the lookup function actually works -- get
+                 * rid of the '&& false' when that happens. *)
 
         (* Return a meaning, morph index, free-variation graph, blocking-rule digraph,
          * seen table, and predicted table in response to the given hypothesis
@@ -428,7 +460,8 @@ module Make(UserTypes : ParamTypes) : T
         =
                 let i, mean = intersect e ms total in
                 let s2, p2, v2, br2 = synchronize s p v br m i mean e in
-                if cycle_overlap br2 then
+                let lex2 = update_lex lex m i mean in
+                if cycle_overlap br2 || utter_blocking br2 lex2 then
                         (* Start over without the head of ms *)
                         get_hypothesis lex v br s p m e (List.tl ms) total
                         (* Question: what happens if everything in ms results in an
@@ -438,7 +471,7 @@ module Make(UserTypes : ParamTypes) : T
                          * anything.
                          * Upshot: this recursion will be finite.*)
                 else
-                        mean, i, v2, br2, s2, p2
+                        lex2, v2, br2, s2, p2
 
         (* lexeme2list l = the list of (key,value) pairs in l, in no particular
          * order. *)
@@ -458,10 +491,12 @@ module Make(UserTypes : ParamTypes) : T
                 let sms = sort_dissim_to e ims in
                 (* sms = the list of meanings of m, sorted by similarity to e, paired
                  * with their homophone indexes in the lexicon. *)
-                let mean, idx, v2, br2, s2, p2 =
-                        get_hypothesis lex v br s p m e sms (List.length sms) in
-                let lex2 = update_lex lex m idx mean in
-                lex2, v2, br2, s2, p2
+                (* let lex2, v2, br2, s2, p2 = *)
+                get_hypothesis lex v br s p m e sms (List.length sms)
+                (*let lex2 = update_lex lex m idx mean in
+                lex2, v2, br2, s2, p2*)
+                (* TODO: Delete these commented-out things when we know this
+                 * works. *)
 
         type text = (morph*monomial) list
 
