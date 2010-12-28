@@ -435,17 +435,6 @@ module Make(UserTypes : ParamTypes) : T
                 let g ((m1,i1),(m2,i2)) =
                         FSet.subset (lookup m1 i1 lex) (lookup m2 i2 lex) in
                 List.exists g (digraph2pairs brTc)
-                (* TODO: Think about whether this "Not_found -> false" is
-                 * right.  I think Not_found only happens when we're looking up
-                 * the newly-witnessed text entry, since the lexicon doesn't
-                 * reflect the putative new text entry [which would be either
-                 * intersected into an existing thingy -- in that case the
-                 * lookup DOES work, but it's wrong -- or its own new entry --
-                 * in that case the lookup doesn't work, which means we should
-                 * actually default to the witnessed environment when Not_found
-                 * happens, rather than assuming false]. *)
-                (* TODO: Stub until the lookup function actually works -- get
-                 * rid of the '&& false' when that happens. *)
 
         (* Return a meaning, morph index, free-variation graph, blocking-rule digraph,
          * seen table, and predicted table in response to the given hypothesis
@@ -491,12 +480,7 @@ module Make(UserTypes : ParamTypes) : T
                 let sms = sort_dissim_to e ims in
                 (* sms = the list of meanings of m, sorted by similarity to e, paired
                  * with their homophone indexes in the lexicon. *)
-                (* let lex2, v2, br2, s2, p2 = *)
                 get_hypothesis lex v br s p m e sms (List.length sms)
-                (*let lex2 = update_lex lex m idx mean in
-                lex2, v2, br2, s2, p2*)
-                (* TODO: Delete these commented-out things when we know this
-                 * works. *)
 
         type text = (morph*monomial) list
 
