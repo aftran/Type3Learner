@@ -38,9 +38,9 @@ module type T = sig
         val    morph2string : morph    -> string
         val monomial2string : monomial -> string
         val  lexicon2string : lexicon  -> string
-        val  table2string   : table    -> string
+        val    table2string : table    -> string
         val  digraph2string : digraph  -> string
-        val  graph2string   : graph    -> string
+        val    graph2string : graph    -> string
 
         val print_morph    : morph    -> unit
         val print_feature  : feature  -> unit
