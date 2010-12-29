@@ -1,3 +1,4 @@
+
 module type T = sig
         (** An algorithm for learning morphological paradigms.  Implements Katya
          Pertsova's Type 3 Learner.  *)
@@ -5,7 +6,9 @@ module type T = sig
         (** User-provided type for a morph(eme) or word. *)
         type morph
 
-        (** User-provided type for a feature. *)
+        (** Type for a feature.  Alias for string*string -- (A,x) means feature
+         * "A" of value "x".  For example, ("Ergative","+") is what linguists
+         * usually write as "+Ergative". *)
         type feature
 
         (** A monomial is a set of features. *)
@@ -159,16 +162,11 @@ module type T = sig
 end
 
 module type ParamTypes = sig
-        type feature
         type morph
-
-        val compare_features : feature -> feature -> int
-        val compare_morphs   : morph   -> morph   -> int
-
-        val feature2string : feature -> string
-        val   morph2string : morph   -> string
+        val compare_morphs : morph -> morph -> int
+        val morph2string : morph -> string
 end
 
 module Make (UserTypes : ParamTypes) : T
-        with type feature = UserTypes.feature
-        and  type morph   = UserTypes.morph
+        with type morph   = UserTypes.morph
+        and  type feature = string*string

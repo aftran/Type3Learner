@@ -6,30 +6,24 @@
  *      ./demo
  *
  * For advanced users: Type3learner is a functor that lets you pick what types
- * morphs and features are.  This lets you treat any data type you want as a
- * morph and a feature, as long as you tell the functor about them in advance.
- * This makes it possible to store data about pronunciation or grammar in each
- * morph.  But for everyday use, it is easiest to work with morphs and features
- * both being strings. *)
+ * morphs are.  This lets you treat any data type you want as a morph, as long
+ * as you tell the functor about it in advance.  This makes it possible to store
+ * data about pronunciation or grammar in each morph.  For everyday use, it is
+ * easiest to just define morphs to be strings, as in this example. *)
+open Type3learner (* TODO: Delete. *)
 
 module L = Type3learner.Make(struct
-        type feature = string
-        type morph   = string
-
-        let compare_features = compare
-        let compare_morphs   = compare
-
-        let id o = o
-        let feature2string = id
-        let morph2string   = id
+        type morph = string
+        let compare_morphs = compare
+        let morph2string o = o
 end)
 
 (* First, make some monomials that can be used in texts that we feed the
  * learner. *)
-let m1 = L.list2monomial ["A+"; "B-"];;
-let m2 = L.list2monomial ["A+"; "B+"];;
-let m3 = L.list2monomial ["A-"; "B+"];;
-let m4 = L.list2monomial ["A-"; "B-"];;
+let m1 = L.list2monomial [("A","+"); ("B","-")];;
+let m2 = L.list2monomial [("A","+"); ("B","+")];;
+let m3 = L.list2monomial [("A","-"); ("B","+")];;
+let m4 = L.list2monomial [("A","-"); ("B","-")];;
 
 (* A text (type L.text) is a list of (morph,monomial) pairs.  Since morphs are
  * strings, we can write a text as a list of (string,monomial) pairs. *)

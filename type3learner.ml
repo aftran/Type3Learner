@@ -70,27 +70,22 @@ module type T = sig
 end
 
 module type ParamTypes = sig
-        type feature
         type morph
-
-        val compare_features : feature -> feature -> int
-        val compare_morphs   : morph   -> morph   -> int
-
-        val feature2string : feature -> string
-        val   morph2string : morph   -> string
+        val compare_morphs : morph -> morph -> int
+        val morph2string : morph -> string
 end
 
 module Make(UserTypes : ParamTypes) : T
-        with type feature = UserTypes.feature
-        and  type morph   = UserTypes.morph
+        with type morph   = UserTypes.morph
+        and  type feature = string*string
 = struct
 
         type morph   = UserTypes.morph
-        type feature = UserTypes.feature
+        type feature = string*string
 
         module FSet = Set.Make(struct
                 type t = feature
-                let compare = UserTypes.compare_features
+                let compare = compare
         end)
 
         let monomial2list = FSet.elements
@@ -126,7 +121,7 @@ module Make(UserTypes : ParamTypes) : T
         (* A lexicon is a table that maps morphs to lexemes. *)
         type lexicon = lexeme Lexicon.t
 
-        let feature2string = UserTypes.feature2string
+        let feature2string (a,b) = b ^ a
         let morph2string   = UserTypes.morph2string
 
         module IndexedMorph = struct
