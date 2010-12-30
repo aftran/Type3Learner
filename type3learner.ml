@@ -315,6 +315,44 @@ module Make(UserTypes : ParamTypes) : T
                 let newVal = IntMap.add i mn x in
                 Lexicon.add m newVal l
 
+        (* Functions for minimizing lexemes. *)
+
+        (* Convert a map into an association list of (key,value) pairs, sorted
+         * in increasing order of key.
+         * This is included in the Map functor of OCaml 3.12.0, but I'm
+         * re-implementing it here until the Debian packages upgrade to 3.12.0. *)
+        let bindings m =
+                let f key valu lst = (key,valu)::lst in
+                List.rev (IntMap.fold f m [])
+        
+        (* Returns whether the two monomials are equally specified and differ by
+         * only one feature value. *)
+        let reducible a b = let aMb = FSet.diff a b
+                            and bMa = FSet.diff b a in
+                            let aMb_elem = FSet.choose aMb
+                            and bMa_elem = FSet.choose bMa in
+                            FSet.cardinal a == FSet.cardinal b &&
+                            1 == FSet.cardinal aMb &&
+                            1 == FSet.cardinal bMa &&
+                            fst aMb_elem == fst bMa_elem
+
+        (* minimize_step, only operating on an ascending-order association list
+         * rather than a map. *)
+        let rec minimize_step_list l = match l with
+                  []      -> None
+                | (x::xs) -> match None (*foldyStuff; TODO: Stub.*) with
+                                  Some t -> Some t
+                                | None   -> minimize_step_list xs
+
+        (* If possible, find a pair of map elements (i,q) and (j,r) such that
+         * differ_only_one q r is true.  (Without loss of generality, let i
+         * denote the smaller of the two indexes.)  Delete both map elements,
+         * then add (i, q intersected with r).
+         * If this is possible, return Some of the triple (the new map, j, i).
+         * Notice the reverse order of j and i -- read it as "j becomes i".
+         * Otherwise, return None. *)
+        let minimize_step (l:lexeme) = minimize_step_list (bindings l)
+
         (* In terms of Type3learner, morphs e t = the morphs seen in environment e,
          * according to table t.
          * morphs e t = the MSet.t associated with monomial e in table t, if it exists,
