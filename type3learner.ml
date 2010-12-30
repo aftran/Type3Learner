@@ -326,23 +326,34 @@ module Make(UserTypes : ParamTypes) : T
                 List.rev (IntMap.fold f m [])
         
         (* Returns whether the two monomials are equally specified and differ by
-         * only one feature value. *)
-        let reducible a b = let aMb = FSet.diff a b
-                            and bMa = FSet.diff b a in
-                            let aMb_elem = FSet.choose aMb
-                            and bMa_elem = FSet.choose bMa in
-                            FSet.cardinal a == FSet.cardinal b &&
-                            1 == FSet.cardinal aMb &&
-                            1 == FSet.cardinal bMa &&
-                            fst aMb_elem == fst bMa_elem
+         * only one feature value.  (Features are pairs, and the feature value
+         * is defined as the second item in the pair.) *)
+        let reducible a b =
+                let aMb = FSet.diff a b
+                and bMa = FSet.diff b a in
+                let aMb_elem = FSet.choose aMb
+                and bMa_elem = FSet.choose bMa in
+                FSet.cardinal a == FSet.cardinal b &&
+                1 == FSet.cardinal aMb             &&
+                1 == FSet.cardinal bMa             &&
+                fst aMb_elem == fst bMa_elem
 
-        (* minimize_step, only operating on an ascending-order association list
-         * rather than a map. *)
+        (* find_reducible (i,q) xs finds an element (j,r) in lst such that
+         * reducible (i,q) (j,r) is true, if possible.  Returns Some (j,r) if
+         * possible.  Otherwise, returns None. *)
+        let rec find_reducible (i,q) xs = match xs with
+                  []              -> None
+                | ( (j,r)::rest ) -> if reducible q r
+                                        then Some (j,r)
+                                        else find_reducible (i,q) rest
+
+        (* If possible, return Some (the first two elements (_,a) and (_,b) in
+        * the given list such that reducible a b).  Otherwise, return None. *)
         let rec minimize_step_list l = match l with
                   []      -> None
-                | (x::xs) -> match None (*foldyStuff; TODO: Stub.*) with
-                                  Some t -> Some t
-                                | None   -> minimize_step_list xs
+                | (x::xs) -> match find_reducible x xs with
+                                  None   -> minimize_step_list xs
+                                | Some y -> Some (x,y)
 
         (* If possible, find a pair of map elements (i,q) and (j,r) such that
          * differ_only_one q r is true.  (Without loss of generality, let i
@@ -351,14 +362,24 @@ module Make(UserTypes : ParamTypes) : T
          * If this is possible, return Some of the triple (the new map, j, i).
          * Notice the reverse order of j and i -- read it as "j becomes i".
          * Otherwise, return None. *)
-        let minimize_step (l:lexeme) = minimize_step_list (bindings l)
+        let minimize_step (l:lexeme) =
+                match minimize_step_list (bindings l) with
+                          None                -> None
+                        | Some ((i,q), (j,r)) ->
+                                let l2 = ((IntMap.add i (FSet.inter q r)) <<<
+                                          (IntMap.remove i)               <<<
+                                          (IntMap.remove j)) l
+                                in
+                                Some (l2, j, i)
+
+        (* End of lexeme-minimization functions. *)
 
         (* In terms of Type3learner, morphs e t = the morphs seen in environment e,
          * according to table t.
          * morphs e t = the MSet.t associated with monomial e in table t, if it exists,
          * otherwise the empty MSet.t. *)
         let morphs (e:monomial) (t:table) =
-                try Table.find e t with Not_found-> MSet.empty
+                try Table.find e t with Not_found -> MSet.empty
 
         (* update_table t e m i = the table t with the added pair (m,i) in the set
          * associated with e. *)
