@@ -382,8 +382,8 @@ module Make(UserTypes : ParamTypes) : T
                 in
                 Table.fold f s DG.empty
 
-        (* cross_lists r s = the cartesian product of the elements of lists r
-         * and s. *)
+        (* cross_lists r s = the list of elements of the cartesian product of
+         * the elements of lists r and s (preserving repetition of elements). *)
         let cross_lists (r:'a list) (s:'b list) =
                 let f a m =
                         let g b n = (m,n)::b in
