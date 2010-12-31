@@ -398,12 +398,15 @@ module Make(UserTypes : ParamTypes) : T
                             and p2  = Table.map convertMSet p in
                             Some (lex2, v2, br2, s2, p2)
 
+        (* Minimize the hypothesis for the given morph. *)
         let rec minimize lex morph v br s p =
                 match minimize_hypothesis_step lex morph v br s p with
                           None -> (lex, v, br, s, p)
                         | Some (lex2, v2, br2, s2, p2)
                              -> minimize lex2 morph v2 br2 s2 p2
 
+        (* Minimize the hypothesis for each of the morphs in the given list of
+         * morphs. *)
         let rec minimize_by_all lex morphs v br s p =
                 let f (lex', v', br', s', p') morph =
                         minimize lex' morph v' br' s' p' in
