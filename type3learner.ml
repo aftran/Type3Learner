@@ -530,6 +530,11 @@ module Make(UserTypes : ParamTypes) : T
                         FSet.subset (lookup m1 i1 lex) (lookup m2 i2 lex) in
                 List.exists g (digraph2pairs brTc)
 
+        (* Returns whether v and br share any edges. *)
+        let free_overlap (v:graph) (br:digraph) =
+                let f (a,b) = G.mem_edge v a b in
+                List.exists f (digraph2pairs br)
+
         (* Return a meaning, morph index, free-variation graph, blocking-rule digraph,
          * seen table, and predicted table in response to the given hypothesis
          * (lex, v, br) and the witnessing of morph m in environment e.  The input must
@@ -544,7 +549,9 @@ module Make(UserTypes : ParamTypes) : T
                 let i, mean = intersect e ms total in
                 let s2, p2, v2, br2 = synchronize s p v br m i mean e in
                 let lex2 = update_lex lex m i mean in
-                if cycle_overlap br2 || utter_blocking br2 lex2 then
+                if cycle_overlap br2  ||
+                   free_overlap v br2 ||
+                   utter_blocking br2 lex2 then
                         (* Start over without the head of ms *)
                         get_hypothesis lex v br s p m e (List.tl ms) total
                         (* Question: what happens if everything in ms results in an
