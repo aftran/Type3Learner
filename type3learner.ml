@@ -336,7 +336,7 @@ module Make(UserTypes : ParamTypes) : T
                 FSet.cardinal a == FSet.cardinal b &&
                 1 == FSet.cardinal aMb             &&
                 1 == FSet.cardinal bMa             &&
-                fst aMb_elem == fst bMa_elem
+                fst aMb_elem = fst bMa_elem
 
         (* find_reducible (i,q) xs finds an element (j,r) in lst such that
          * reducible (i,q) (j,r) is true, if possible.  Returns Some (j,r) if
