@@ -575,11 +575,6 @@ module Make(UserTypes : ParamTypes) : T
                              (* TODO: morphs has repeat entries, which cause us
                               * to minimize unnecessarily.  Remove redundancies
                               * by passing it through a set. *)
-                                 (* morphs = List.map (fun (x,idx) -> x) <<<
-                                          List.flatten <<<
-                                          List.map (fun (a,b) -> [a;b]) <<<
-                                          MSet.elements <<<
-                                          MSet.diff brSet br2Set in *)
                              minimize_by_all lex2 morphs v2 br2 s2 p2
 
         (* lexeme2list l = the list of (key,value) pairs in l, in no particular
