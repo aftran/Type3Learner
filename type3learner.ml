@@ -550,18 +550,37 @@ module Make(UserTypes : ParamTypes) : T
                 let s2, p2, v2, br2 = synchronize s p v br m i mean e in
                 let lex2 = update_lex lex m i mean in
                 if cycle_overlap br2  ||
-                   free_overlap v br2 ||
-                   utter_blocking br2 lex2 then
-                        (* Start over without the head of ms *)
-                        get_hypothesis lex v br s p m e (List.tl ms) total
-                        (* Question: what happens if everything in ms results in an
-                         * overlap?
-                         * Answer: No, once ms becomes empty, get_hypothesis
-                         * posits a new homophone of m, which will never overlap with
-                         * anything.
-                         * Upshot: this recursion will be finite.*)
-                else
-                        lex2, v2, br2, s2, p2
+                   free_overlap v2 br2 ||
+                   utter_blocking br2 lex2
+                        then (* Start over without the head of ms. *)
+                              get_hypothesis lex v br s p m e (List.tl ms) total
+                              (* Question: what happens if everything in ms
+                               * results in an overlap?
+                               * Answer: No, once ms becomes empty,
+                               * get_hypothesis posits a new homophone of m,
+                               * which will never overlap with anything.
+                               * Upshot: this recursion will be finite.*)
+                        else (* Return the new hypothesis, but first minimize
+                                all the lexical rows that might need minimizing. *)
+                             let relevantEdges = List.filter
+                                                        (fun (a,b) -> G.mem_edge v2 a b)
+                                                        (digraph2pairs br) in
+                             (* turn the list of morph*morph pairs into a list
+                              * of morphs containing each member of each pair. *)
+                             let morphs =
+                                 (List.map (fun (mph,idx) -> mph) <<<
+                                 List.flatten <<<
+                                 List.map (fun (x,y) -> [x;y]))
+                                relevantEdges in
+                             (* TODO: morphs has repeat entries, which cause us
+                              * to minimize unnecessarily.  Remove redundancies
+                              * by passing it through a set. *)
+                                 (* morphs = List.map (fun (x,idx) -> x) <<<
+                                          List.flatten <<<
+                                          List.map (fun (a,b) -> [a;b]) <<<
+                                          MSet.elements <<<
+                                          MSet.diff brSet br2Set in *)
+                             minimize_by_all lex2 morphs v2 br2 s2 p2
 
         (* lexeme2list l = the list of (key,value) pairs in l, in no particular
          * order. *)
