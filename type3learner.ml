@@ -121,7 +121,7 @@ module Make(UserTypes : ParamTypes) : T
         (* A lexicon is a table that maps morphs to lexemes. *)
         type lexicon = lexeme Lexicon.t
 
-        let feature2string (a,b) = b ^ a
+        let feature2string (a,b) = a ^ b
         let morph2string   = UserTypes.morph2string
 
         module IndexedMorph = struct
