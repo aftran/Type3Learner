@@ -563,7 +563,14 @@ module Make(UserTypes : ParamTypes) : T
                         else (* Return the new hypothesis, but first minimize
                                 all the lexical rows that might need minimizing. *)
                              let relevantEdges = List.filter
-                                                        (fun (a,b) -> G.mem_edge v2 a b)
+                                                        (* Find all obsolete
+                                                         * blocking rules that
+                                                         * are also in free
+                                                         * variation: *)
+                                                        (fun (a,b) ->
+                                                                G.mem_edge v2 a b &&
+                                                                not (DG.mem_edge br2 a b)
+                                                        )
                                                         (digraph2pairs br) in
                              (* turn the list of morph*morph pairs into a list
                               * of morphs containing each member of each pair. *)
