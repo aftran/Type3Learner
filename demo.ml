@@ -10,7 +10,6 @@
  * as you tell the functor about it in advance.  This makes it possible to store
  * data about pronunciation or grammar in each morph.  For everyday use, it is
  * easiest to just define morphs to be strings, as in this example. *)
-open Type3learner (* TODO: Delete. *)
 
 module L = Type3learner.Make(struct
         type morph = string
