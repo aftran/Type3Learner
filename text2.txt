@@ -1,0 +1,8 @@
+am participant:+ speaker:+ class:human number:sg 
+are participant:+ speaker:+ class:human number:pl 
+are participant:+ speaker:- class:human number:sg 
+are participant:+ speaker:- class:human number:pl 
+is participant:- speaker:- class:human number:sg 
+are participant:- speaker:- class:human number:pl 
+is participant:- speaker:- class:nonhuman number:sg 
+are participant:- speaker:- class:nonhuman number:pl 

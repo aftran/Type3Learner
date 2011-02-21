@@ -535,7 +535,7 @@ module Make(UserTypes : ParamTypes) : T
                 let f (a,b) = G.mem_edge v a b in
                 List.exists f (digraph2pairs br)
 
-        (* Return a meaning, morph index, free-variation graph, blocking-rule digraph,
+        (* Return a lexicon, free-variation graph, blocking-rule digraph,
          * seen table, and predicted table in response to the given hypothesis
          * (lex, v, br) and the witnessing of morph m in environment e.  The input must
          * also provide an indexed list of monomials attached to morph m in the lexicon,
@@ -547,10 +547,10 @@ module Make(UserTypes : ParamTypes) : T
                 (e:monomial) (ms:(int*monomial) list) (total:int)
         =
                 let i, mean = intersect e ms total in
-                let s2, p2, v2, br2 = synchronize s p v br m i mean e in
+                let seen2, pred2, var2, br2 = synchronize s p v br m i mean e in
                 let lex2 = update_lex lex m i mean in
                 if cycle_overlap br2  ||
-                   free_overlap v2 br2 ||
+                   free_overlap var2 br2 ||
                    utter_blocking br2 lex2
                         then (* Start over without the head of ms. *)
                               get_hypothesis lex v br s p m e (List.tl ms) total
@@ -562,6 +562,9 @@ module Make(UserTypes : ParamTypes) : T
                                * Upshot: this recursion will be finite.*)
                         else (* Return the new hypothesis, but first minimize
                                 all the lexical rows that might need minimizing. *)
+			  (lex2,var2,br2,seen2,pred2)
+
+			  (*
                              let relevantEdges = List.filter
                                                         (* Find all obsolete
                                                          * blocking rules that
@@ -583,6 +586,8 @@ module Make(UserTypes : ParamTypes) : T
                               * to minimize unnecessarily.  Remove redundancies
                               * by passing it through a set. *)
                              minimize_by_all lex2 morphs v2 br2 s2 p2
+			    *)
+
 
         (* lexeme2list l = the list of (key,value) pairs in l, in no particular
          * order. *)
